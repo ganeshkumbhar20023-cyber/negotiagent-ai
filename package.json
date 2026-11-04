@@ -1,0 +1,22 @@
+{
+  "name": "negotiagent-ai",
+  "version": "1.0.0",
+  "description": "Educational procurement negotiation web application for an MIDC-related use case",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "procurement",
+    "negotiation",
+    "midc",
+    "educational"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0"
+  }
+}

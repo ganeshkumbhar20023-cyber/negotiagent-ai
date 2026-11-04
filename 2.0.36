@@ -1,0 +1,9 @@
+Collecting sqlalchemy
+  Downloading sqlalchemy-2.0.55-cp310-cp310-win_amd64.whl (2.2 MB)
+     ---------------------------------------- 2.2/2.2 MB 38.9 kB/s eta 0:00:00
+Collecting greenlet>=1
+  Downloading greenlet-3.5.6-cp310-cp310-win_amd64.whl (322 kB)
+     ------------------------------------- 322.9/322.9 kB 45.9 kB/s eta 0:00:00
+Requirement already satisfied: typing-extensions>=4.6.0 in c:\users\user\negotiagent-ai\venv\lib\site-packages (from sqlalchemy) (4.16.0)
+Installing collected packages: greenlet, sqlalchemy
+Successfully installed greenlet-3.5.6 sqlalchemy-2.0.55

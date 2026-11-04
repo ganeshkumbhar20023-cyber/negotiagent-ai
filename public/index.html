@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NegotiAgent AI - Procurement System | Shree Mahalaxmi Marbel and Granite</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div>
+        <h1 class="app-title" data-i18n="appTitle">NegotiAgent AI</h1>
+        <div class="app-subtitle" data-i18n="subTitle">Tiles, Marbles & Granite Procurement Negotiation Prototype</div>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <!-- Notification Bell Trigger -->
+      <button id="btnNotifBell" class="notif-bell-btn" aria-label="Notifications">
+        🔔
+        <span id="notifBadge" class="notif-badge">0</span>
+      </button>
+
+      <!-- Language Selector -->
+      <div class="lang-select-wrapper">
+        <label for="languageSelector">Language / भाषा / भाषा:</label>
+        <select id="languageSelector" class="lang-select" aria-label="Select Interface Language">
+          <option value="en">English (EN)</option>
+          <option value="hi">हिंदी (HI)</option>
+          <option value="mr">मराठी (MR)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Notification Drawer -->
+    <div id="notifDrawer" class="notif-drawer">
+      <div class="notif-drawer-header">
+        <span data-i18n="notifTitle">In-App Procurement Notifications</span>
+        <span style="font-weight:400; cursor:pointer;" id="btnCloseNotif">&times;</span>
+      </div>
+      <ul id="notifList" class="notif-list">
+        <!-- Live notification items injected here -->
+      </ul>
+    </div>
+  </header>
+
+  <!-- Prototype Academic Disclaimer Banner -->
+  <div class="academic-banner" role="region" aria-label="Simulation Notice">
+    <span data-i18n="disclaimerBadge">Academic Prototype - Sponsored by Shree Mahalaxmi Marbel and Granite, Mudal Titta (DYPCET Kolhapur)</span>
+    <span class="badge-demo">SIMULATED AGENT SYSTEM</span>
+  </div>
+
+  <!-- Primary Navigation -->
+  <nav class="main-nav" aria-label="Main Navigation">
+    <ul class="nav-links">
+      <li><a href="#dashboard" id="navLinkDashboard" class="nav-item active" data-i18n="navDashboard">Dashboard</a></li>
+      <li><a href="#new-rfq" id="navLinkNewRfq" class="nav-item" data-i18n="navNewRfq">Create RFQ</a></li>
+      <li><a href="#suppliers" id="navLinkSuppliers" class="nav-item" data-i18n="navSuppliers">Simulated Suppliers</a></li>
+      <li><a href="#replay" id="navLinkReplay" class="nav-item" data-i18n="navReplay">Negotiation Replay</a></li>
+      <li><a href="#approvals" id="navLinkApprovals" class="nav-item" data-i18n="navApprovals">Approvals & POs</a></li>
+      <li><a href="#reports" id="navLinkReports" class="nav-item" data-i18n="navReports">Reports & Analytics</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- VIEW 1: DASHBOARD -->
+    <div id="viewDashboard" class="view-panel active">
+      <section class="metrics-grid" aria-label="Procurement Statistics">
+        <article class="metric-card">
+          <div class="metric-header" data-i18n="statSavingsTitle">Simulated Cost Savings</div>
+          <div class="metric-value highlight" id="metricSavings">₹1,42,500</div>
+          <div class="metric-desc" data-i18n="statSavingsSub">Saved against initial factory quotes</div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-header" data-i18n="statActiveTitle">Active Negotiations</div>
+          <div class="metric-value" id="metricActive">3</div>
+          <div class="metric-desc" data-i18n="statActiveSub">Simulated tile & granite manufacturer rounds</div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-header" data-i18n="statPendingTitle">Pending Approvals</div>
+          <div class="metric-value" id="metricPending">2</div>
+          <div class="metric-desc" data-i18n="statPendingSub">Requires sign-off for PO</div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-header" data-i18n="statCompletedTitle">Simulated Orders</div>
+          <div class="metric-value" id="metricCompleted">14</div>
+          <div class="metric-desc" data-i18n="statCompletedSub">Confirmed consignments dispatched</div>
+        </article>
+      </section>
+
+      <section class="section-panel" aria-label="Activity Table">
+        <div class="panel-header">
+          <h2 class="panel-title" data-i18n="recentActivityTitle">Current Tiles & Granite Procurement Activity</h2>
+          <button id="btnOpenRfq" class="btn-primary" data-i18n="btnCreateNewRfq">+ Create New RFQ</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th data-i18n="tableColRfq">RFQ ID / Material</th>
+                <th data-i18n="tableColZone">Source / Hub</th>
+                <th data-i18n="tableColBudget">Budget Ceiling</th>
+                <th data-i18n="tableColStatus">Negotiation Status</th>
+                <th data-i18n="tableColAction">Action</th>
+              </tr>
+            </thead>
+            <tbody id="rfqTableBody">
+              <!-- Loaded via /api/rfqs -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- VIEW 2: CREATE RFQ FORM -->
+    <div id="viewNewRfq" class="view-panel">
+      <section class="section-panel" aria-label="RFQ Form">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" data-i18n="rfqFormTitle">Create Procurement Request (RFQ)</h2>
+            <p class="panel-subtitle" data-i18n="rfqFormSubtitle">Define consignment specifications, quality thresholds, and buyer agent rules</p>
+          </div>
+        </div>
+
+        <div id="rfqAlert" class="alert-box" role="alert"></div>
+
+        <form id="rfqForm" novalidate>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="tileCategory" data-i18n="labelTileCategory">Material Category</label>
+              <select id="tileCategory" class="form-control" required>
+                <option value="PGVT Vitrified Floor Tiles" data-i18n="optPgvt">PGVT / GVT Vitrified Floor Tiles</option>
+                <option value="Ceramic Glazed Wall Tiles" data-i18n="optCeramicWall">Ceramic Glazed Wall Tiles</option>
+                <option value="Heavy-Duty Parking Tiles" data-i18n="optParking">Heavy-Duty Anti-Skid Parking Tiles</option>
+                <option value="Double Charge Vitrified" data-i18n="optDoubleCharge">Double Charge Vitrified Tiles</option>
+                <option value="Polished Black Granite Slabs" data-i18n="optGranite">Polished Black Granite Slabs</option>
+                <option value="Premium Italian Finish Marbles" data-i18n="optMarble">Premium Italian Finish Marbles</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="tileSize" data-i18n="labelTileSize">Dimension / Slab Size</label>
+              <select id="tileSize" class="form-control" required>
+                <option value="600x1200 mm (2x4 ft)">600x1200 mm (2x4 ft)</option>
+                <option value="800x1600 mm (GVT Slab)">800x1600 mm (GVT Slab)</option>
+                <option value="300x600 mm (Wall Tile)">300x600 mm (Wall Tile)</option>
+                <option value="300x300 mm (Parking)">300x300 mm (Parking)</option>
+                <option value="10x3 ft (Granite Kitchen Slab)">10x3 ft (Granite Kitchen Slab)</option>
+                <option value="8x4 ft (Marble Flooring Slab)">8x4 ft (Marble Flooring Slab)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="boxQuantity" data-i18n="labelQuantity">Quantity (Boxes / Sq.Ft)</label>
+              <input type="number" id="boxQuantity" class="form-control" min="50" max="15000" step="10" value="500" required>
+            </div>
+
+            <div class="form-group">
+              <label for="budgetCeiling" data-i18n="labelBudgetCeiling">Maximum Budget Ceiling (₹ INR)</label>
+              <input type="number" id="budgetCeiling" class="form-control" min="20000" max="5000000" step="5000" value="275000" required>
+            </div>
+
+            <div class="form-group">
+              <label for="deliveryDeadline" data-i18n="labelDeliveryDeadline">Required Delivery Deadline</label>
+              <input type="date" id="deliveryDeadline" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="qualityGrade" data-i18n="labelQualityGrade">Minimum Quality Grade</label>
+              <select id="qualityGrade" class="form-control" required>
+                <option value="Premium Grade" data-i18n="optGradePremium">Premium Grade (Zero Defect Standard)</option>
+                <option value="Standard / Commercial" data-i18n="optGradeStandard">Standard / Commercial Grade</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="maxBreakage" data-i18n="labelMaxBreakage">Max Acceptable Transit Breakage (%)</label>
+              <input type="number" id="maxBreakage" class="form-control" min="0.5" max="5.0" step="0.5" value="2.0" required>
+            </div>
+          </div>
+
+          <div class="weights-box">
+            <div class="weights-header">
+              <span data-i18n="priorityWeightsTitle">Buyer Agent Priority Weights (Must sum to 100%)</span>
+              <span id="weightTotalTag" class="total-weight-tag valid">100%</span>
+            </div>
+
+            <div class="weights-grid">
+              <div class="form-group">
+                <label for="weightPrice" data-i18n="weightPrice">Price Weight (%)</label>
+                <input type="number" id="weightPrice" class="form-control weight-input" min="0" max="100" value="45" required>
+              </div>
+
+              <div class="form-group">
+                <label for="weightQuality" data-i18n="weightQuality">Quality Weight (%)</label>
+                <input type="number" id="weightQuality" class="form-control weight-input" min="0" max="100" value="25" required>
+              </div>
+
+              <div class="form-group">
+                <label for="weightDelivery" data-i18n="weightDelivery">Delivery Speed Weight (%)</label>
+                <input type="number" id="weightDelivery" class="form-control weight-input" min="0" max="100" value="20" required>
+              </div>
+
+              <div class="form-group">
+                <label for="weightWarranty" data-i18n="weightWarranty">Breakage / Warranty Weight (%)</label>
+                <input type="number" id="weightWarranty" class="form-control weight-input" min="0" max="100" value="10" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" id="btnSubmitRfq" class="btn-primary" data-i18n="btnSubmitRfq">Publish RFQ & Initialize Supplier Agents</button>
+            <button type="button" id="btnCancelRfq" class="btn-secondary" data-i18n="btnCancelRfq">Cancel & Return to Dashboard</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- VIEW 3: SIMULATED SUPPLIERS -->
+    <div id="viewSuppliers" class="view-panel">
+      <section class="section-panel" aria-label="Suppliers Section">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" data-i18n="suppliersTitle">Simulated Tile & Granite Supplier Agents</h2>
+            <p class="panel-subtitle" data-i18n="suppliersSubtitle">Autonomous agent personas representing regional manufacturing clusters and distributors</p>
+          </div>
+        </div>
+
+        <div id="suppliersContainer" class="suppliers-grid">
+          <!-- Injected via JS -->
+        </div>
+      </section>
+    </div>
+
+    <!-- VIEW 4: REPLAY & AUDIT TRAIL -->
+    <div id="viewReplay" class="view-panel">
+      <section class="section-panel" aria-label="Replay Section">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" data-i18n="replayTitle">Negotiation Transcript & Multi-Round Audit Replay</h2>
+            <p class="panel-subtitle" data-i18n="replaySubtitle">Inspect multi-criteria trade-offs, concession curves, and agent decision transparency</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+          <label for="selectReplayRfq" style="font-weight:600; font-size:0.9rem;" data-i18n="replaySelectPrompt">Select an RFQ negotiation to replay:</label>
+          <select id="selectReplayRfq" class="form-control" style="max-width:320px;">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <div class="replay-stepper">
+          <button id="btnStepRound1" class="step-btn active" data-i18n="round1Btn">Round 1: Opening Quotes</button>
+          <button id="btnStepRound2" class="step-btn" data-i18n="round2Btn">Round 2: Concession / Counter</button>
+          <button id="btnStepRound3" class="step-btn" data-i18n="round3Btn">Round 3: Final Offers & Outcome</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th data-i18n="colSupplier">Supplier Agent</th>
+                <th data-i18n="colQuote">Rate / Box or SqFt</th>
+                <th data-i18n="colBuyerCounter">Buyer Counter</th>
+                <th data-i18n="colLead">Lead Days</th>
+                <th data-i18n="colBreakage">Breakage (%)</th>
+                <th data-i18n="colScore">Utility Score</th>
+                <th data-i18n="colDecision">Agent Decision</th>
+              </tr>
+            </thead>
+            <tbody id="replayTableBody">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="replay-rationale-box">
+          <div style="font-weight:700; color:var(--primary-navy); margin-bottom:0.4rem;" data-i18n="rationaleHeader">Round Rationale & Rules Check</div>
+          <div id="replayRationaleText">Select a round to view decision transparency.</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- VIEW 5: HUMAN APPROVALS & PURCHASE ORDERS -->
+    <div id="viewApprovals" class="view-panel">
+      <section class="section-panel" aria-label="Approvals and POs Section">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" data-i18n="approvalsTitle">Human-in-the-Loop Approvals & Purchase Orders</h2>
+            <p class="panel-subtitle" data-i18n="approvalsSubtitle">Review recommended consignments, grant commercial sign-off, and simulate settlements</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th data-i18n="colPoId">Purchase Order #</th>
+                <th data-i18n="colConsignment">Consignment Details</th>
+                <th data-i18n="colSubtotal">Taxable Subtotal</th>
+                <th data-i18n="colGst">GST (18%)</th>
+                <th data-i18n="colTotalAmount">Total Order (₹)</th>
+                <th data-i18n="colPaymentStatus">Payment Sandbox</th>
+                <th data-i18n="tableColAction">Action</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <!-- Loaded via /api/orders -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- VIEW 6: REPORTS & ANALYTICS -->
+    <div id="viewReports" class="view-panel">
+      <section class="section-panel" aria-label="Analytics Section">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" data-i18n="reportsTitle">Procurement Analytics & Performance Intelligence</h2>
+            <p class="panel-subtitle" data-i18n="reportsSubtitle">Aggregate negotiation statistics, supplier win distributions, and audit data export</p>
+          </div>
+          <a href="/api/reports/export/csv" class="btn-primary" data-i18n="btnExportCsv">📥 Export Audit Log (CSV)</a>
+        </div>
+
+        <div class="metrics-grid" style="margin-bottom: 1.5rem;">
+          <article class="metric-card">
+            <div class="metric-header" data-i18n="kpiAvgSavings">Average Concession Rate</div>
+            <div class="metric-value highlight" id="reportAvgSavings">0%</div>
+            <div class="metric-desc" data-i18n="kpiAvgSavingsSub">Across completed multi-agent rounds</div>
+          </article>
+
+          <article class="metric-card">
+            <div class="metric-header" data-i18n="kpiTotalSpent">Total Settled Spend</div>
+            <div class="metric-value" id="reportTotalSpent">₹0</div>
+            <div class="metric-desc" data-i18n="kpiTotalSpentSub">Authorized via Purchase Orders</div>
+          </article>
+        </div>
+
+        <div class="distribution-card">
+          <h3 style="font-size: 1rem; font-weight:700; color:var(--primary-navy); margin-bottom: 0.2rem;" data-i18n="chartTitleSupplierWins">Supplier Agent Win Distribution</h3>
+          <p style="font-size: 0.8rem; color:var(--text-muted); margin-bottom: 1.25rem;" data-i18n="chartSubSupplierWins">Proportion of consignments awarded by multi-criteria utility score</p>
+          <div id="supplierWinBars">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- Negotiation Outcome Modal -->
+  <div id="negotiationModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalTitle">Negotiation Execution Completed</h3>
+        <button id="btnCloseModal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Live summary populated by JS -->
+      </div>
+      <div class="modal-footer">
+        <button id="btnModalViewReplay" class="btn-secondary" data-i18n="btnReplayRfq">Replay & Audit</button>
+        <button id="btnModalApprove" class="btn-primary" data-i18n="btnApproveRfq">Sign-Off & Approve</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Printable Invoice / PO Modal -->
+  <div id="invoiceModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box large">
+      <div class="modal-header">
+        <h3>GST Tax Invoice & Purchase Order</h3>
+        <button id="btnCloseInvoice" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="invoicePrintArea" class="invoice-container">
+          <!-- Dynamic Content -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btnPrintInvoiceAction" class="btn-primary">🖨️ Print / Save PDF</button>
+        <button id="btnDismissInvoice" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Notice -->
+  <footer class="site-footer">
+    <p data-i18n="footerText">NegotiAgent AI - Final Year Academic Project developed for Shree Mahalaxmi Marbel and Granite by DYPCET Kolhapur students (Rushikesh Powar, Rohit Mengane, Ganesh Kumbhar, Pawan Payghan).</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/translations.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

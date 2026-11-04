@@ -47,9 +47,9 @@
     </div>
   </header>
 
-  <!-- Prototype Academic Disclaimer Banner -->
+  <!-- Academic Disclaimer Banner -->
   <div class="academic-banner" role="region" aria-label="Simulation Notice">
-    <span data-i18n="disclaimerBadge">Academic Prototype - Sponsored by Shree Mahalaxmi Marbel and Granite, Mudal Titta (DYPCET Kolhapur)</span>
+    <span data-i18n="disclaimerBadge">Academic Prototype - Sponsored by Shree Mahalaxmi Marbel and Granite, Mudhal Titta (DYPCET Kolhapur)</span>
     <span class="badge-demo">SIMULATED AGENT SYSTEM</span>
   </div>
 
@@ -73,25 +73,25 @@
       <section class="metrics-grid" aria-label="Procurement Statistics">
         <article class="metric-card">
           <div class="metric-header" data-i18n="statSavingsTitle">Simulated Cost Savings</div>
-          <div class="metric-value highlight" id="metricSavings">₹1,42,500</div>
+          <div class="metric-value highlight" id="metricSavings">₹0</div>
           <div class="metric-desc" data-i18n="statSavingsSub">Saved against initial factory quotes</div>
         </article>
 
         <article class="metric-card">
           <div class="metric-header" data-i18n="statActiveTitle">Active Negotiations</div>
-          <div class="metric-value" id="metricActive">3</div>
+          <div class="metric-value" id="metricActive">0</div>
           <div class="metric-desc" data-i18n="statActiveSub">Simulated tile & granite manufacturer rounds</div>
         </article>
 
         <article class="metric-card">
           <div class="metric-header" data-i18n="statPendingTitle">Pending Approvals</div>
-          <div class="metric-value" id="metricPending">2</div>
+          <div class="metric-value" id="metricPending">0</div>
           <div class="metric-desc" data-i18n="statPendingSub">Requires sign-off for PO</div>
         </article>
 
         <article class="metric-card">
           <div class="metric-header" data-i18n="statCompletedTitle">Simulated Orders</div>
-          <div class="metric-value" id="metricCompleted">14</div>
+          <div class="metric-value" id="metricCompleted">0</div>
           <div class="metric-desc" data-i18n="statCompletedSub">Confirmed consignments dispatched</div>
         </article>
       </section>
@@ -233,6 +233,7 @@
             <h2 class="panel-title" data-i18n="suppliersTitle">Simulated Tile & Granite Supplier Agents</h2>
             <p class="panel-subtitle" data-i18n="suppliersSubtitle">Autonomous agent personas representing regional manufacturing clusters and distributors</p>
           </div>
+          <button id="btnOpenAddSupplierModal" class="btn-primary" data-i18n="btnAddSupplier">+ Add Supplier Agent</button>
         </div>
 
         <div id="suppliersContainer" class="suppliers-grid">
@@ -358,6 +359,75 @@
 
   </main>
 
+  <!-- Add Supplier Modal -->
+  <div id="addSupplierModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 data-i18n="addSupplierModalTitle">Register New Supplier Agent</h3>
+        <button id="btnCloseSupplierModal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="supplierFormAlert" class="alert-box" role="alert"></div>
+        <form id="addSupplierForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="newSupId" data-i18n="lblSupId">Supplier Agent ID</label>
+              <input type="text" id="newSupId" class="form-control" placeholder="e.g., SUP-ICHAL-04" required>
+            </div>
+            <div class="form-group">
+              <label for="newSupName" data-i18n="lblSupName">Company / Depot Name</label>
+              <input type="text" id="newSupName" class="form-control" placeholder="e.g., Ichalkaranji Tiles Yard" required>
+            </div>
+            <div class="form-group">
+              <label for="newSupHub" data-i18n="lblSupHub">Manufacturing Hub / Depot Location</label>
+              <input type="text" id="newSupHub" class="form-control" placeholder="e.g., Shahapur MIDC, Ichalkaranji" required>
+            </div>
+            <div class="form-group">
+              <label for="newSupStrategy" data-i18n="lblSupStrategy">Negotiation Strategy Persona</label>
+              <select id="newSupStrategy" class="form-control" required>
+                <option value="balanced">Balanced (Trade-off driven)</option>
+                <option value="cooperative">Cooperative (Margin flexible & quick concessions)</option>
+                <option value="aggressive">Aggressive (Price protective & rigid defense)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="newSupBasePrice" data-i18n="lblSupBasePrice">Opening List Price (₹ / Box)</label>
+              <input type="number" id="newSupBasePrice" class="form-control" min="50" max="10000" step="5" value="540" required>
+            </div>
+            <div class="form-group">
+              <label for="newSupWalkaway" data-i18n="lblSupWalkaway">Minimum Walkaway Floor (₹ / Box)</label>
+              <input type="number" id="newSupWalkaway" class="form-control" min="50" max="10000" step="5" value="480" required>
+            </div>
+            <div class="form-group">
+              <label for="newSupLead" data-i18n="lblSupLead">Standard Dispatch Lead Days</label>
+              <input type="number" id="newSupLead" class="form-control" min="1" max="45" value="5" required>
+            </div>
+            <div class="form-group">
+              <label for="newSupMinLead" data-i18n="lblSupMinLead">Fastest Expedited Lead Days</label>
+              <input type="number" id="newSupMinLead" class="form-control" min="1" max="45" value="3" required>
+            </div>
+            <div class="form-group">
+              <label for="newSupBreakage" data-i18n="lblSupBreakage">Transit Breakage Guarantee (%)</label>
+              <input type="number" id="newSupBreakage" class="form-control" min="0.1" max="10.0" step="0.1" value="1.0" required>
+            </div>
+            <div class="form-group">
+              <label for="newSupQuality" data-i18n="lblSupQuality">Certified Quality Score (0-100)</label>
+              <input type="number" id="newSupQuality" class="form-control" min="50" max="100" step="1" value="92" required>
+            </div>
+            <div class="form-group">
+              <label for="newSupReliability" data-i18n="lblSupReliability">Vendor Reliability Score (0-100)</label>
+              <input type="number" id="newSupReliability" class="form-control" min="50" max="100" step="1" value="90" required>
+            </div>
+          </div>
+          <div class="form-actions" style="margin-top:1.5rem;">
+            <button type="submit" id="btnSaveSupplier" class="btn-primary" data-i18n="btnSaveSup">Save & Deploy Agent</button>
+            <button type="button" id="btnCancelSupplierModal" class="btn-secondary" data-i18n="btnCancelSup">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Negotiation Outcome Modal -->
   <div id="negotiationModal" class="modal-overlay" style="display:none;">
     <div class="modal-box">
@@ -394,7 +464,7 @@
     </div>
   </div>
 
-  <!-- Footer Notice -->
+  <!-- Site Footer -->
   <footer class="site-footer">
     <p data-i18n="footerText">NegotiAgent AI - Final Year Academic Project developed for Shree Mahalaxmi Marbel and Granite by DYPCET Kolhapur students (Rushikesh Powar, Rohit Mengane, Ganesh Kumbhar, Pawan Payghan).</p>
   </footer>

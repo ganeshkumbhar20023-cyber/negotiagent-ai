@@ -1,849 +1,806 @@
 /**
- * NegotiAgent AI - Main Frontend Controller
- * Domain: Tiles, Marbles & Granite Procurement
- * Sponsor: Shree Mahalaxmi Marbel and Granite (Mudal Titta, Kolhapur)
- * Institution: DYPCET Kolhapur
+ * NegotiAgent AI - Frontend Application Controller
+ * Handles SPA navigation, API requests, dynamic supplier registration,
+ * negotiation runs, audit stepper replay, approvals, and PO printing.
  */
 
-function formatINR(amount) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0
-  }).format(amount);
-}
-
 let currentLang = localStorage.getItem('negotiagent_lang') || 'en';
-let activeReplayData = null;
+let cachedRfqs = [];
+let cachedSuppliers = [];
+let cachedOrders = [];
+let currentReplayData = null;
 let currentReplayRound = 1;
 let activeModalRfqId = null;
 
-function getTranslatedHub(sourceHub) {
-  const dict = translations[currentLang] || translations.en;
-  if (!sourceHub) return dict.hub_default;
-  if (sourceHub.includes('Morbi Cluster')) return dict.hub_morbi;
-  if (sourceHub.includes('Kolhapur Regional')) return dict.hub_kolhapur;
-  if (sourceHub.includes('Pune Industrial')) return dict.hub_pune;
-  return dict.hub_default;
-}
+// --- INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', () => {
+  initTranslations();
+  setupNavigation();
+  setupRfqForm();
+  setupSupplierModal();
+  setupReplayControls();
+  setupNotificationDrawer();
 
-function getTranslatedStatusBadge(statusText) {
-  const dict = translations[currentLang] || translations.en;
-  let pillClass = 'evaluating';
-  let label = dict.statusEvaluating;
+  // Load baseline data
+  loadDashboardData();
+  loadSuppliers();
+  loadOrders();
+  loadReports();
+});
 
-  if (statusText.includes('Round 2') || statusText.includes('फेरी २') || statusText.includes('दौर 2')) {
-    pillClass = 'round2';
-    label = dict.statusRound2;
-  } else if (statusText.includes('Ready for Approval') || statusText.includes('समीक्षा') || statusText.includes('मंजुरी')) {
-    pillClass = 'review';
-    label = dict.statusPendingReview;
-  } else if (statusText.includes('Order Simulated') || statusText.includes('आदेश')) {
-    pillClass = 'completed';
-    label = dict.statusCompleted;
-  }
-
-  return `<span class="status-pill ${pillClass}">${label}</span>`;
-}
-
-function setLanguage(lang) {
-  if (!translations[lang]) return;
-  currentLang = lang;
-  localStorage.setItem('negotiagent_lang', lang);
-
+// --- TRANSLATIONS & LOCALIZATION ---
+function initTranslations() {
   const selector = document.getElementById('languageSelector');
-  if (selector && selector.value !== lang) {
-    selector.value = lang;
-  }
-
-  document.querySelectorAll('[data-i18n]').forEach((element) => {
-    const key = element.getAttribute('data-i18n');
-    if (translations[lang][key]) {
-      element.textContent = translations[lang][key];
-    }
-  });
-
-  document.documentElement.lang = lang;
-  updateWeightSumDisplay();
-
-  loadSuppliersFromBackend();
-  loadRfqsFromBackend();
-  loadNotifications();
-  loadOrdersFromBackend();
-  loadReportsData();
-  if (activeReplayData) renderReplayRound(currentReplayRound);
-}
-
-// 6-Way View Switcher
-function navigateTo(viewId) {
-  const views = {
-    dashboard: document.getElementById('viewDashboard'),
-    'new-rfq': document.getElementById('viewNewRfq'),
-    suppliers: document.getElementById('viewSuppliers'),
-    replay: document.getElementById('viewReplay'),
-    approvals: document.getElementById('viewApprovals'),
-    reports: document.getElementById('viewReports')
-  };
-
-  const navs = {
-    dashboard: document.getElementById('navLinkDashboard'),
-    'new-rfq': document.getElementById('navLinkNewRfq'),
-    suppliers: document.getElementById('navLinkSuppliers'),
-    replay: document.getElementById('navLinkReplay'),
-    approvals: document.getElementById('navLinkApprovals'),
-    reports: document.getElementById('navLinkReports')
-  };
-
-  Object.keys(views).forEach((key) => {
-    if (views[key]) views[key].classList.remove('active');
-    if (navs[key]) navs[key].classList.remove('active');
-  });
-
-  if (views[viewId]) {
-    views[viewId].classList.add('active');
-    if (navs[viewId]) navs[viewId].classList.add('active');
-    window.location.hash = viewId;
-  }
-}
-
-function updateWeightSumDisplay() {
-  const p = Number(document.getElementById('weightPrice')?.value || 0);
-  const q = Number(document.getElementById('weightQuality')?.value || 0);
-  const d = Number(document.getElementById('weightDelivery')?.value || 0);
-  const w = Number(document.getElementById('weightWarranty')?.value || 0);
-  const total = p + q + d + w;
-
-  const totalTag = document.getElementById('weightTotalTag');
-  if (!totalTag) return total;
-
-  totalTag.textContent = `${total}%`;
-  totalTag.className = total === 100 ? 'total-weight-tag valid' : 'total-weight-tag invalid';
-  return total;
-}
-
-// Notifications Drawer
-async function loadNotifications() {
-  const notifList = document.getElementById('notifList');
-  const notifBadge = document.getElementById('notifBadge');
-  if (!notifList) return;
-
-  try {
-    const res = await fetch('/api/notifications');
-    if (!res.ok) return;
-    const notifs = await res.json();
-
-    if (notifBadge) notifBadge.textContent = notifs.length;
-    notifList.innerHTML = '';
-
-    if (notifs.length === 0) {
-      notifList.innerHTML = `<li class="notif-item" style="color:var(--text-muted);">${translations[currentLang].notifEmpty}</li>`;
-      return;
-    }
-
-    notifs.forEach((n) => {
-      const li = document.createElement('li');
-      li.className = 'notif-item';
-      li.innerHTML = `
-        <div class="notif-item-title">${n.title}</div>
-        <div>${n.message}</div>
-        <div class="notif-item-time">${n.created_at}</div>
-      `;
-      notifList.appendChild(li);
+  if (selector) {
+    selector.value = currentLang;
+    selector.addEventListener('change', (e) => {
+      currentLang = e.target.value;
+      localStorage.setItem('negotiagent_lang', currentLang);
+      applyTranslations();
+      renderSuppliersGrid();
+      renderRfqTable();
     });
-  } catch (err) {
-    console.error('Error loading notifications:', err);
   }
+  applyTranslations();
 }
 
-// Reports Analytics Loader
-async function loadReportsData() {
-  const avgSavingsElem = document.getElementById('reportAvgSavings');
-  const totalSpentElem = document.getElementById('reportTotalSpent');
-  const winBarsContainer = document.getElementById('supplierWinBars');
+function t(key, defaultVal = '') {
+  if (window.translations && window.translations[currentLang] && window.translations[currentLang][key]) {
+    return window.translations[currentLang][key];
+  }
+  if (window.translations && window.translations['en'] && window.translations['en'][key]) {
+    return window.translations['en'][key];
+  }
+  return defaultVal || key;
+}
 
-  try {
-    const res = await fetch('/api/reports/summary');
-    if (!res.ok) return;
-    const data = await res.json();
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const translated = t(key);
+    if (translated) {
+      if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
+        el.value = translated;
+      } else {
+        el.textContent = translated;
+      }
+    }
+  });
+}
 
-    if (avgSavingsElem) avgSavingsElem.textContent = `${data.avg_savings_pct}%`;
-    if (totalSpentElem) totalSpentElem.textContent = formatINR(data.total_spent);
+// --- SPA VIEW NAVIGATION ---
+function setupNavigation() {
+  const navLinks = {
+    navLinkDashboard: 'viewDashboard',
+    navLinkNewRfq: 'viewNewRfq',
+    navLinkSuppliers: 'viewSuppliers',
+    navLinkReplay: 'viewReplay',
+    navLinkApprovals: 'viewApprovals',
+    navLinkReports: 'viewReports'
+  };
 
-    if (winBarsContainer) {
-      winBarsContainer.innerHTML = '';
-      const wins = data.supplier_win_distribution || {};
-      const totalWins = Object.values(wins).reduce((a, b) => a + b, 0) || 1;
-
-      Object.entries(wins).forEach(([name, count]) => {
-        const pct = Math.round((count / totalWins) * 100);
-        const barItem = document.createElement('div');
-        barItem.className = 'dist-bar-item';
-        barItem.innerHTML = `
-          <div class="dist-bar-header">
-            <span>${name}</span>
-            <span>${count} deals (${pct}%)</span>
-          </div>
-          <div class="dist-bar-track">
-            <div class="dist-bar-fill" style="width: ${pct}%;"></div>
-          </div>
-        `;
-        winBarsContainer.appendChild(barItem);
+  Object.entries(navLinks).forEach(([linkId, viewId]) => {
+    const link = document.getElementById(linkId);
+    if (link) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchView(viewId, link);
       });
     }
-  } catch (err) {
-    console.error('Error loading reports:', err);
+  });
+
+  const btnOpenRfq = document.getElementById('btnOpenRfq');
+  if (btnOpenRfq) {
+    btnOpenRfq.addEventListener('click', () => {
+      const newRfqLink = document.getElementById('navLinkNewRfq');
+      switchView('viewNewRfq', newRfqLink);
+    });
   }
 }
 
-// Trigger Live Negotiation
-async function triggerNegotiation(rfqId) {
+function switchView(viewId, activeLinkEl) {
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+
+  const targetView = document.getElementById(viewId);
+  if (targetView) targetView.classList.add('active');
+  if (activeLinkEl) activeLinkEl.classList.add('active');
+
+  // Trigger contextual data refresh
+  if (viewId === 'viewDashboard') loadDashboardData();
+  if (viewId === 'viewSuppliers') loadSuppliers();
+  if (viewId === 'viewApprovals') loadOrders();
+  if (viewId === 'viewReports') loadReports();
+}
+
+// --- DASHBOARD & RFQS ---
+async function loadDashboardData() {
+  try {
+    const [rfqRes, reportRes] = await Promise.all([
+      fetch('/api/rfqs'),
+      fetch('/api/reports/summary')
+    ]);
+
+    if (rfqRes.ok) {
+      cachedRfqs = await rfqRes.json();
+      renderRfqTable();
+      populateReplayDropdown();
+    }
+
+    if (reportRes.ok) {
+      const report = await reportRes.json();
+      document.getElementById('metricSavings').textContent = `₹${report.total_savings.toLocaleString('en-IN')}`;
+      document.getElementById('metricCompleted').textContent = report.total_orders;
+      document.getElementById('metricPending').textContent = (report.total_orders - report.paid_orders);
+      document.getElementById('metricActive').textContent = cachedRfqs.filter(r => r.status.includes('Evaluating') || r.status.includes('Active')).length;
+    }
+  } catch (err) {
+    console.error('Failed to load dashboard metrics:', err);
+  }
+}
+
+function renderRfqTable() {
+  const tbody = document.getElementById('rfqTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (cachedRfqs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No RFQs created yet. Click "+ Create New RFQ" to begin.</td></tr>`;
+    return;
+  }
+
+  cachedRfqs.forEach(rfq => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <strong>${rfq.id}</strong><br>
+        <span style="font-size:0.85rem; color:var(--text-muted);">${rfq.category} (${rfq.size})</span>
+      </td>
+      <td>${rfq.source_hub || 'Mudhal Titta Depot'}</td>
+      <td>₹${rfq.budget_ceiling.toLocaleString('en-IN')} (${rfq.quantity} units)</td>
+      <td><span class="status-badge ${getStatusBadgeClass(rfq.status)}">${rfq.status}</span></td>
+      <td>
+        <button class="btn-secondary btn-sm" onclick="triggerNegotiation('${rfq.id}')">Inspect & Run</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function getStatusBadgeClass(status) {
+  if (status.includes('Approved') || status.includes('Completed') || status.includes('Awarded')) return 'badge-success';
+  if (status.includes('Evaluating') || status.includes('Negotiating')) return 'badge-warning';
+  return 'badge-info';
+}
+
+// --- RFQ CREATION & WEIGHT VALIDATION ---
+function setupRfqForm() {
+  const form = document.getElementById('rfqForm');
+  const alertBox = document.getElementById('rfqAlert');
+  const weightTotalTag = document.getElementById('weightTotalTag');
+  const weightInputs = document.querySelectorAll('.weight-input');
+
+  const updateWeightSum = () => {
+    let sum = 0;
+    weightInputs.forEach(input => sum += parseFloat(input.value) || 0);
+    weightTotalTag.textContent = `${sum}%`;
+    if (sum === 100) {
+      weightTotalTag.className = 'total-weight-tag valid';
+      return true;
+    } else {
+      weightTotalTag.className = 'total-weight-tag invalid';
+      return false;
+    }
+  };
+
+  weightInputs.forEach(input => input.addEventListener('input', updateWeightSum));
+
+  const btnCancelRfq = document.getElementById('btnCancelRfq');
+  if (btnCancelRfq) {
+    btnCancelRfq.addEventListener('click', () => {
+      form.reset();
+      updateWeightSum();
+      switchView('viewDashboard', document.getElementById('navLinkDashboard'));
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.style.display = 'none';
+
+      if (!updateWeightSum()) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = 'Buyer priority weights must sum to exactly 100% before publishing.';
+        alertBox.style.display = 'block';
+        return;
+      }
+
+      const payload = {
+        category: document.getElementById('tileCategory').value,
+        size: document.getElementById('tileSize').value,
+        quantity: parseInt(document.getElementById('boxQuantity').value, 10),
+        budget_ceiling: parseFloat(document.getElementById('budgetCeiling').value),
+        delivery_deadline: document.getElementById('deliveryDeadline').value || '2026-12-15',
+        quality_grade: document.getElementById('qualityGrade').value,
+        max_breakage: parseFloat(document.getElementById('maxBreakage').value),
+        weights: {
+          price: parseFloat(document.getElementById('weightPrice').value),
+          quality: parseFloat(document.getElementById('weightQuality').value),
+          delivery: parseFloat(document.getElementById('weightDelivery').value),
+          warranty: parseFloat(document.getElementById('weightWarranty').value)
+        }
+      };
+
+      try {
+        const res = await fetch('/api/rfqs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Failed to create RFQ');
+        }
+
+        const created = await res.json();
+        alertBox.className = 'alert-box success';
+        alertBox.textContent = `RFQ ${created.id} created successfully! Initializing negotiation auction...`;
+        alertBox.style.display = 'block';
+
+        setTimeout(() => {
+          form.reset();
+          updateWeightSum();
+          alertBox.style.display = 'none';
+          switchView('viewDashboard', document.getElementById('navLinkDashboard'));
+          triggerNegotiation(created.id);
+        }, 1200);
+
+      } catch (err) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = err.message;
+        alertBox.style.display = 'block';
+      }
+    });
+  }
+}
+
+// --- DYNAMIC SUPPLIER REGISTRATION (FRONTEND MODAL) ---
+function setupSupplierModal() {
+  const modal = document.getElementById('addSupplierModal');
+  const btnOpen = document.getElementById('btnOpenAddSupplierModal');
+  const btnClose = document.getElementById('btnCloseSupplierModal');
+  const btnCancel = document.getElementById('btnCancelSupplierModal');
+  const form = document.getElementById('addSupplierForm');
+  const alertBox = document.getElementById('supplierFormAlert');
+
+  if (btnOpen) {
+    btnOpen.addEventListener('click', () => {
+      alertBox.style.display = 'none';
+      form.reset();
+      document.getElementById('newSupId').value = `SUP-DEPOT-${Math.floor(100 + Math.random() * 900)}`;
+      modal.style.display = 'flex';
+    });
+  }
+
+  const hideModal = () => { if (modal) modal.style.display = 'none'; };
+  if (btnClose) btnClose.addEventListener('click', hideModal);
+  if (btnCancel) btnCancel.addEventListener('click', hideModal);
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.style.display = 'none';
+
+      const basePrice = parseFloat(document.getElementById('newSupBasePrice').value);
+      const walkaway = parseFloat(document.getElementById('newSupWalkaway').value);
+      const standardLead = parseInt(document.getElementById('newSupLead').value, 10);
+      const minLead = parseInt(document.getElementById('newSupMinLead').value, 10);
+
+      if (walkaway > basePrice) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = 'Minimum walkaway price cannot be higher than opening price!';
+        alertBox.style.display = 'block';
+        return;
+      }
+
+      if (minLead > standardLead) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = 'Expedited lead days cannot exceed standard lead days!';
+        alertBox.style.display = 'block';
+        return;
+      }
+
+      const payload = {
+        id: document.getElementById('newSupId').value.trim(),
+        name: document.getElementById('newSupName').value.trim(),
+        hub_location: document.getElementById('newSupHub').value.trim(),
+        agent_strategy: document.getElementById('newSupStrategy').value,
+        base_price_per_box: basePrice,
+        min_walkaway_price: walkaway,
+        standard_lead_days: standardLead,
+        min_lead_days: minLead,
+        offered_breakage_pct: parseFloat(document.getElementById('newSupBreakage').value),
+        quality_score: parseFloat(document.getElementById('newSupQuality').value),
+        reliability_score: parseFloat(document.getElementById('newSupReliability').value)
+      };
+
+      try {
+        const res = await fetch('/api/suppliers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Failed to save supplier agent');
+        }
+
+        hideModal();
+        await loadSuppliers();
+        triggerInAppNotification(`New Supplier Agent "${payload.name}" registered and deployed to auction!`);
+      } catch (err) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = err.message;
+        alertBox.style.display = 'block';
+      }
+    });
+  }
+}
+
+async function loadSuppliers() {
+  try {
+    const res = await fetch('/api/suppliers');
+    if (res.ok) {
+      cachedSuppliers = await res.json();
+      renderSuppliersGrid();
+    }
+  } catch (err) {
+    console.error('Failed to load suppliers:', err);
+  }
+}
+
+function renderSuppliersGrid() {
+  const container = document.getElementById('suppliersContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  cachedSuppliers.forEach(s => {
+    const card = document.createElement('article');
+    card.className = 'supplier-card';
+    card.innerHTML = `
+      <div class="supplier-header">
+        <div>
+          <h3 style="font-size:1.05rem; font-weight:700; color:var(--primary-navy);">${t(s.id + '_name', s.name)}</h3>
+          <div style="font-size:0.8rem; color:var(--text-muted);">${t(s.id + '_hub', s.hub_location)}</div>
+        </div>
+        <span class="badge-strategy ${s.agent_strategy}">${s.agent_strategy.toUpperCase()}</span>
+      </div>
+      <div class="supplier-stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Opening Quote</div>
+          <div class="stat-val">₹${s.base_price_per_box}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Walkaway Floor</div>
+          <div class="stat-val">₹${s.min_walkaway_price}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Standard Lead</div>
+          <div class="stat-val">${s.standard_lead_days} Days</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Breakage Tol.</div>
+          <div class="stat-val">≤ ${s.offered_breakage_pct}%</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// --- NEGOTIATION SIMULATION EXECUTION ---
+window.triggerNegotiation = async function(rfqId) {
   activeModalRfqId = rfqId;
   const modal = document.getElementById('negotiationModal');
-  const modalBody = document.getElementById('modalBody');
-  const modalTitle = document.getElementById('modalTitle');
+  const body = document.getElementById('modalBody');
+  const title = document.getElementById('modalTitle');
 
-  modalTitle.textContent = `Autonomous Negotiation: ${rfqId}`;
-  modalBody.innerHTML = `
-    <div style="text-align: center; padding: 2rem;">
-      <p>Simulating 3 rounds across candidate supplier agents...</p>
-      <small style="color:var(--text-muted)">Evaluating Price, Quality, Lead Time, Breakage</small>
+  title.textContent = `Autonomous Multi-Round Negotiation (${rfqId})`;
+  body.innerHTML = `
+    <div style="text-align:center; padding: 2rem;">
+      <div class="spinner" style="margin: 0 auto 1rem;"></div>
+      <p>Simulating 3-round concession protocol across supplier personas...</p>
     </div>
   `;
   modal.style.display = 'flex';
 
   try {
     const res = await fetch(`/api/negotiations/start/${rfqId}`, { method: 'POST' });
-    if (!res.ok) throw new Error('Failed to run negotiation simulation');
-    const data = await res.json();
+    if (!res.ok) throw new Error('Simulation failed to run');
+    const outcome = await res.json();
 
-    const w = data.winning_supplier;
-    modalBody.innerHTML = `
-      <div class="recommend-badge">RECOMMENDED SUPPLIER: ${w.name}</div>
-      <p><strong>Hub Location:</strong> ${w.hub_location}</p>
-      <p><strong>Final Negotiated Rate:</strong> ${formatINR(w.final_box_quote)} / unit</p>
-      <p><strong>Consignment Total:</strong> ${formatINR(w.final_total_cost)} (Saved: ${formatINR(data.savings_amount)})</p>
-      <p><strong>Dispatch Lead Time:</strong> ${w.lead_days} days | <strong>Breakage Guarantee:</strong> &le; ${w.breakage_pct}%</p>
-      <p><strong>Composite Utility Score:</strong> ${w.composite_score} / 100 pts</p>
+    currentReplayData = outcome;
 
-      <div class="explanation-card">
-        <strong>Agent Reasoning & Trade-off Analysis:</strong><br>
-        ${data.explanation}
+    body.innerHTML = `
+      <div style="margin-bottom: 1.25rem;">
+        <span class="badge-success" style="font-size:0.85rem; padding:0.3rem 0.6rem;">AUCTION CONCLUDED</span>
+        <h4 style="margin: 0.6rem 0 0.2rem; font-size:1.15rem; color:var(--primary-navy);">
+          Award Recommendation: ${outcome.winning_supplier.name}
+        </h4>
+        <div style="font-size:0.85rem; color:var(--text-muted);">${outcome.winning_supplier.hub_location}</div>
+      </div>
+
+      <div class="metrics-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:1.25rem;">
+        <div class="metric-card" style="padding:0.75rem;">
+          <div class="metric-header">Simulated Savings</div>
+          <div class="metric-value highlight" style="font-size:1.4rem;">₹${outcome.savings_amount.toLocaleString('en-IN')}</div>
+          <div class="metric-desc">Under initial quote</div>
+        </div>
+        <div class="metric-card" style="padding:0.75rem;">
+          <div class="metric-header">Final Agreed Cost</div>
+          <div class="metric-value" style="font-size:1.4rem;">₹${outcome.final_total_cost.toLocaleString('en-IN')}</div>
+          <div class="metric-desc">Taxable Subtotal</div>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border-left:4px solid var(--accent-gold); padding:0.75rem 1rem; border-radius:4px; font-size:0.88rem; line-height:1.45;">
+        <strong>Executive Trade-Off Rationale:</strong><br>
+        ${outcome.explanation}
       </div>
     `;
 
-    document.getElementById('btnModalViewReplay').onclick = () => {
-      modal.style.display = 'none';
-      openReplayForRfq(rfqId);
-    };
+    loadDashboardData();
+    populateReplayDropdown();
+    triggerInAppNotification(`Negotiation completed for ${rfqId}. Recommended: ${outcome.winning_supplier.name}`);
 
-    document.getElementById('btnModalApprove').onclick = () => {
-      modal.style.display = 'none';
-      approveNegotiationRfq(rfqId);
-    };
+  } catch (err) {
+    body.innerHTML = `<div class="alert-box error">${err.message}</div>`;
+  }
+};
 
-    loadRfqsFromBackend();
-    loadNotifications();
-    loadReportsData();
-    const savingsElem = document.getElementById('metricSavings');
-    if (savingsElem) {
-      savingsElem.textContent = formatINR(142500 + data.savings_amount);
+// Modal Actions
+const btnCloseModal = document.getElementById('btnCloseModal');
+if (btnCloseModal) {
+  btnCloseModal.addEventListener('click', () => {
+    document.getElementById('negotiationModal').style.display = 'none';
+  });
+}
+
+const btnModalViewReplay = document.getElementById('btnModalViewReplay');
+if (btnModalViewReplay) {
+  btnModalViewReplay.addEventListener('click', () => {
+    document.getElementById('negotiationModal').style.display = 'none';
+    const select = document.getElementById('selectReplayRfq');
+    if (select && activeModalRfqId) select.value = activeModalRfqId;
+    switchView('viewReplay', document.getElementById('navLinkReplay'));
+    loadReplay(activeModalRfqId);
+  });
+}
+
+const btnModalApprove = document.getElementById('btnModalApprove');
+if (btnModalApprove) {
+  btnModalApprove.addEventListener('click', async () => {
+    if (!activeModalRfqId) return;
+    try {
+      const res = await fetch(`/api/orders/approve/${activeModalRfqId}`, { method: 'POST' });
+      if (!res.ok) throw new Error('Approval sign-off failed');
+      const order = await res.json();
+      document.getElementById('negotiationModal').style.display = 'none';
+      switchView('viewApprovals', document.getElementById('navLinkApprovals'));
+      triggerInAppNotification(`Purchase Order ${order.po_id} authorized for sign-off!`);
+    } catch (err) {
+      alert(err.message);
     }
+  });
+}
 
-  } catch (err) {
-    modalBody.innerHTML = `<div class="alert-box danger" style="display:block">Error: ${err.message}</div>`;
+// --- REPLAY & AUDIT TRAIL CONTROLS ---
+function setupReplayControls() {
+  const steps = [
+    { btn: 'btnStepRound1', round: 1 },
+    { btn: 'btnStepRound2', round: 2 },
+    { btn: 'btnStepRound3', round: 3 }
+  ];
+
+  steps.forEach(s => {
+    const b = document.getElementById(s.btn);
+    if (b) {
+      b.addEventListener('click', () => {
+        steps.forEach(x => document.getElementById(x.btn).classList.remove('active'));
+        b.classList.add('active');
+        currentReplayRound = s.round;
+        renderReplayRound();
+      });
+    }
+  });
+
+  const select = document.getElementById('selectReplayRfq');
+  if (select) {
+    select.addEventListener('change', (e) => {
+      loadReplay(e.target.value);
+    });
   }
 }
 
-// Human Approver Sign-Off
-async function approveNegotiationRfq(rfqId) {
+function populateReplayDropdown() {
+  const select = document.getElementById('selectReplayRfq');
+  if (!select) return;
+  select.innerHTML = '<option value="">-- Choose an RFQ to inspect --</option>';
+  cachedRfqs.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = `${r.id} - ${r.category}`;
+    select.appendChild(opt);
+  });
+}
+
+async function loadReplay(rfqId) {
+  if (!rfqId) return;
   try {
-    const res = await fetch(`/api/orders/approve/${rfqId}`, { method: 'POST' });
-    if (!res.ok) throw new Error('Approval request failed');
-    const result = await res.json();
-
-    alert(`Human Sign-Off Confirmed!\nPurchase Order ${result.po_id} has been generated for ₹${result.total_amount?.toLocaleString('en-IN') || ''}`);
-    navigateTo('approvals');
-    loadOrdersFromBackend();
-    loadRfqsFromBackend();
-    loadNotifications();
-    loadReportsData();
+    const res = await fetch(`/api/negotiations/${rfqId}`);
+    if (res.ok) {
+      currentReplayData = await res.json();
+      renderReplayRound();
+    }
   } catch (err) {
-    alert(`Approval Error: ${err.message}`);
+    console.error('Failed to load replay:', err);
   }
 }
 
-// Sandbox Payment Simulation
-async function simulateSandboxPayment(poId, outcome) {
-  try {
-    const res = await fetch(`/api/orders/pay/${poId}?action=${outcome}`, { method: 'POST' });
-    if (!res.ok) throw new Error('Payment processing failed');
-    await res.json();
+function renderReplayRound() {
+  const tbody = document.getElementById('replayTableBody');
+  const rationaleText = document.getElementById('replayRationaleText');
+  if (!tbody || !currentReplayData) return;
+  tbody.innerHTML = '';
 
-    loadOrdersFromBackend();
-    loadNotifications();
-    loadReportsData();
-  } catch (err) {
-    alert(`Sandbox Payment Error: ${err.message}`);
+  const roundRounds = currentReplayData.rounds.filter(r => r.round_number === currentReplayRound);
+  if (roundRounds.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:1.5rem;">No data for Round ${currentReplayRound}</td></tr>`;
+    return;
+  }
+
+  roundRounds.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${r.supplier_name || r.supplier_id}</strong></td>
+      <td>₹${r.supplier_quote}</td>
+      <td>₹${r.buyer_counter || 'N/A'}</td>
+      <td>${r.lead_days_offered} Days</td>
+      <td>${r.breakage_offered}%</td>
+      <td><strong>${r.composite_score.toFixed(1)}</strong></td>
+      <td><span class="status-badge ${r.decision === 'ACCEPTED' ? 'badge-success' : 'badge-info'}">${r.decision}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (rationaleText) {
+    const r = roundRounds[0];
+    rationaleText.textContent = r ? r.rationale : 'Multi-criteria concession analysis evaluated against buyer priority weights.';
   }
 }
 
-// Load and Render Purchase Orders Table
-async function loadOrdersFromBackend() {
-  const tbody = document.getElementById('ordersTableBody');
-  if (!tbody) return;
-
+// --- HUMAN APPROVALS & PURCHASE ORDERS ---
+async function loadOrders() {
   try {
     const res = await fetch('/api/orders');
-    if (!res.ok) return;
-    const orders = await res.json();
-
-    tbody.innerHTML = '';
-    const dict = translations[currentLang] || translations.en;
-
-    if (orders.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:1.5rem; color:var(--text-muted)">${dict.noOrdersYet}</td></tr>`;
-      return;
+    if (res.ok) {
+      cachedOrders = await res.json();
+      renderOrdersTable();
     }
-
-    orders.forEach((po) => {
-      let payClass = 'pending';
-      let payLabel = dict.payStatusPending;
-      if (po.payment_status === 'PAID') {
-        payClass = 'paid';
-        payLabel = dict.payStatusPaid;
-      } else if (po.payment_status === 'FAILED') {
-        payClass = 'failed';
-        payLabel = dict.payStatusFailed;
-      }
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><strong>${po.id}</strong><br><small style="color:var(--text-muted)">RFQ: ${po.rfq_id}</small></td>
-        <td><strong>${po.supplier_name}</strong><br><small>${po.item_description} (Qty: ${po.quantity})</small></td>
-        <td>${formatINR(po.subtotal_amount)}</td>
-        <td>${formatINR(po.gst_amount)}</td>
-        <td><strong>${formatINR(po.total_amount)}</strong></td>
-        <td>
-          <span class="pay-pill ${payClass}">${payLabel}</span>
-          ${po.payment_status !== 'PAID' ? `
-            <div style="margin-top:0.35rem; display:flex; gap:0.25rem;">
-              <button class="btn-success-sm" style="font-size:0.7rem; padding:0.2rem 0.4rem;" onclick="simulateSandboxPayment('${po.id}', 'success')">Pay OK</button>
-              <button class="btn-sm" style="background:#ef4444; font-size:0.7rem; padding:0.2rem 0.4rem;" onclick="simulateSandboxPayment('${po.id}', 'failed')">Fail</button>
-            </div>
-          ` : ''}
-        </td>
-        <td>
-          <button class="btn-sm" onclick='renderInvoiceModal(${JSON.stringify(po)})'>${dict.btnPrintInvoice}</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    const pendingKpi = document.getElementById('metricPending');
-    if (pendingKpi) {
-      const pendingCount = orders.filter((o) => o.payment_status === 'PENDING').length;
-      pendingKpi.textContent = pendingCount;
-    }
-
-    const completedKpi = document.getElementById('metricCompleted');
-    if (completedKpi) {
-      const paidCount = orders.filter((o) => o.payment_status === 'PAID').length;
-      completedKpi.textContent = 14 + paidCount;
-    }
-
   } catch (err) {
-    console.error('Error loading orders:', err);
+    console.error('Failed to load orders:', err);
   }
 }
 
-// Generate Printable Tax Invoice / PO View for Shree Mahalaxmi Marbel and Granite
-function renderInvoiceModal(po) {
-  const modal = document.getElementById('invoiceModal');
-  const printArea = document.getElementById('invoicePrintArea');
+function renderOrdersTable() {
+  const tbody = document.getElementById('ordersTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
 
-  const subtotal = Number(po.subtotal_amount ?? po.subtotal ?? (po.rate_per_box * po.quantity) ?? 0);
-  const gstAmount = Number(po.gst_amount ?? (subtotal * 0.18) ?? 0);
-  const totalAmount = Number(po.total_amount ?? (subtotal + gstAmount) ?? 0);
-  const breakage = po.breakage_allowance_pct ?? po.breakage_pct ?? po.max_breakage ?? 1.5;
-  const description = po.item_description || po.material || "PGVT Vitrified Floor Tiles (Premium Grade)";
-  const approver = po.approver_name || "Ganesh G. Kumbhar (DYPCET Kolhapur)";
-  const leadDays = po.lead_days || 4;
-  const supplierName = po.supplier_name || "Kolhapur Regional Tiles & Granite Yard";
+  if (cachedOrders.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No Purchase Orders generated yet. Run a negotiation to award a consignment.</td></tr>`;
+    return;
+  }
 
-  printArea.innerHTML = `
-    <div class="invoice-header">
+  cachedOrders.forEach(po => {
+    const isPaid = po.payment_status === 'PAID';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${po.id}</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">${po.supplier_name}</span></td>
+      <td>${po.item_description} (${po.quantity} units)</td>
+      <td>₹${po.subtotal_amount.toLocaleString('en-IN')}</td>
+      <td>₹${po.gst_amount.toLocaleString('en-IN')} (18%)</td>
+      <td><strong>₹${po.total_amount.toLocaleString('en-IN')}</strong></td>
+      <td>
+        <span class="status-badge ${isPaid ? 'badge-success' : 'badge-warning'}">${po.payment_status}</span>
+        ${!isPaid ? `<button class="btn-sm btn-primary" style="margin-left:0.4rem;" onclick="simulatePayment('${po.id}')">Pay OK</button>` : ''}
+      </td>
+      <td>
+        <button class="btn-secondary btn-sm" onclick="openInvoiceModal('${po.id}')">Print Invoice / PO</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.simulatePayment = async function(poId) {
+  try {
+    const res = await fetch(`/api/orders/pay/${poId}?action=success`, { method: 'POST' });
+    if (!res.ok) throw new Error('Payment simulation failed');
+    triggerInAppNotification(`Payment simulated successfully for ${poId}! Status updated to PAID.`);
+    loadOrders();
+    loadDashboardData();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+window.openInvoiceModal = function(poId) {
+  const po = cachedOrders.find(o => o.id === poId);
+  if (!po) return;
+
+  const area = document.getElementById('invoicePrintArea');
+  const cgst = (po.gst_amount / 2).toFixed(2);
+  const sgst = (po.gst_amount / 2).toFixed(2);
+
+  area.innerHTML = `
+    <div style="border-bottom: 2px solid var(--primary-navy); padding-bottom: 0.75rem; margin-bottom: 1rem; display:flex; justify-content:space-between;">
       <div>
-        <div class="invoice-company">SHREE MAHALAXMI MARBEL AND GRANITE</div>
-        <div class="invoice-subtext">Proprietor: Mr. Vikram Gurav | Quality Tiles, Marbles & Granite Wholesale</div>
-        <div class="invoice-subtext">📍 Mudhal Titta, Aadamapur Road, Kolhapur, Maharashtra</div>
-        <div class="invoice-subtext">GSTIN: <strong>27SMMAG9876K1Z2</strong> | State Code: 27 (Maharashtra)</div>
+        <h2 style="color:var(--primary-navy); margin:0 0 0.25rem;">Shree Mahalaxmi Marbel and Granite</h2>
+        <div style="font-size:0.85rem; color:#475569;">Mudhal Titta, Aadamapur Road, Kolhapur, Maharashtra</div>
+        <div style="font-size:0.85rem; color:#475569;">Proprietor: Mr. Vikram Gurav | GSTIN: 27AAGFG1234F1Z8</div>
       </div>
-      <div style="text-align: right;">
-        <div class="invoice-title">PURCHASE ORDER</div>
-        <div class="invoice-subtext"><strong>PO Number:</strong> ${po.id || "PO-SMMG-2026"}</div>
-        <div class="invoice-subtext"><strong>Date:</strong> ${po.created_at || new Date().toLocaleDateString('en-GB')}</div>
-        <div class="invoice-subtext"><strong>Linked RFQ:</strong> ${po.rfq_id || "RFQ-TILE-101"}</div>
-        <div class="invoice-subtext"><strong>Status:</strong> ${po.payment_status || "APPROVED"}</div>
+      <div style="text-align:right;">
+        <h3 style="margin:0 0 0.25rem; color:#b45309;">GST PURCHASE ORDER</h3>
+        <div style="font-size:0.9rem; font-weight:700;">PO #: ${po.id}</div>
+        <div style="font-size:0.85rem; color:#64748b;">Date: ${new Date().toLocaleDateString('en-IN')}</div>
       </div>
     </div>
 
-    <div class="invoice-meta-grid">
-      <div class="invoice-meta-box">
-        <strong>SUPPLIER / CONSIGNOR:</strong><br>
-        <strong>${supplierName}</strong><br>
-        Direct Industrial Supply Route to Mudhal Titta Depot<br>
-        Delivery Lead Commitment: <strong>${leadDays} Days</strong><br>
-        Guaranteed Transit Breakage: <strong>&le; ${breakage}%</strong>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem; font-size:0.9rem;">
+      <div style="background:#f8fafc; padding:0.75rem; border-radius:4px;">
+        <strong>Consignor / Supplier:</strong><br>
+        ${po.supplier_name}<br>
+        Depot Code: ${po.supplier_id}<br>
+        Lead Time: ${po.lead_days} Days | Breakage Limit: ≤ ${po.breakage_allowance_pct}%
       </div>
-      <div class="invoice-meta-box">
-        <strong>CONSIGNEE / DELIVERY SITE:</strong><br>
-        <strong>Shree Mahalaxmi Marbel and Granite Godown</strong><br>
-        Mudhal Titta, Aadamapur Road, Kolhapur<br>
-        Student Project Lead: <strong>Ganesh G. Kumbhar (Roll No. 147)</strong><br>
-        Team: <strong>Rushikesh Powar, Rohit Mengane, Pawan Payghan (DYPCET)</strong>
+      <div style="background:#f8fafc; padding:0.75rem; border-radius:4px;">
+        <strong>Delivery Destination Depot:</strong><br>
+        Shree Mahalaxmi Marbel and Granite Godown<br>
+        Mudhal Titta, Kolhapur Junction 416208<br>
+        Authorized Sign-off: ${po.approver_name || 'Mr. Vikram Gurav'}
       </div>
     </div>
 
-    <table class="invoice-table">
+    <table class="data-table" style="margin-bottom:1.5rem;">
       <thead>
         <tr>
-          <th>#</th>
-          <th>Material Description & Specifications</th>
+          <th>Description of Consignment</th>
           <th>HSN Code</th>
           <th>Quantity</th>
-          <th>Negotiated Rate / Unit</th>
-          <th>Taxable Amount (₹)</th>
+          <th>Unit Rate</th>
+          <th>Taxable Subtotal</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>1</td>
-          <td><strong>${description}</strong><br><small>Fully palletized consignment with transit breakage protection</small></td>
+          <td>${po.item_description}</td>
           <td>6907 / 6802</td>
-          <td>${po.quantity || 850}</td>
-          <td>${formatINR(po.rate_per_box || 520)}</td>
-          <td>${formatINR(subtotal)}</td>
+          <td>${po.quantity} units</td>
+          <td>₹${po.rate_per_box}</td>
+          <td>₹${po.subtotal_amount.toLocaleString('en-IN')}</td>
         </tr>
       </tbody>
     </table>
 
-    <div class="invoice-totals">
-      <table class="invoice-totals-table">
-        <tr>
-          <td>Taxable Subtotal:</td>
-          <td style="text-align:right;"><strong>${formatINR(subtotal)}</strong></td>
-        </tr>
-        <tr>
-          <td>CGST (9.0%):</td>
-          <td style="text-align:right;">${formatINR(gstAmount / 2)}</td>
-        </tr>
-        <tr>
-          <td>SGST (9.0%):</td>
-          <td style="text-align:right;">${formatINR(gstAmount / 2)}</td>
-        </tr>
-        <tr class="invoice-grand-total">
-          <td>Grand Total:</td>
-          <td style="text-align:right;">${formatINR(totalAmount)}</td>
-        </tr>
-      </table>
-    </div>
-
-    <div class="invoice-terms">
-      <strong>Terms & Conditions:</strong><br>
-      1. All goods covered under transit breakage replacement warranty up to ${breakage}%.<br>
-      2. Material dispatch must arrive at Mudhal Titta Depot within ${leadDays} calendar days from PO confirmation.<br>
-      3. Valid academic demonstration contract generated via NegotiAgent AI for Shree Mahalaxmi Marbel and Granite.
-    </div>
-
-    <div class="invoice-signatures">
-      <div>
-        ____________________________<br>
-        Mr. Vikram Gurav (Owner)<br>
-        <strong>Shree Mahalaxmi Marbel and Granite</strong>
+    <div style="margin-left:auto; width:280px; font-size:0.9rem; line-height:1.6;">
+      <div style="display:flex; justify-content:space-between;">
+        <span>Taxable Subtotal:</span>
+        <span>₹${po.subtotal_amount.toLocaleString('en-IN')}</span>
       </div>
-      <div style="text-align:right;">
-        ____________________________<br>
-        Authorized Signatory & Seal<br>
-        <strong>${supplierName}</strong>
+      <div style="display:flex; justify-content:space-between;">
+        <span>CGST (9.0%):</span>
+        <span>₹${cgst}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span>SGST (9.0%):</span>
+        <span>₹${sgst}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-weight:700; border-top:1px solid #cbd5e1; padding-top:0.25rem;">
+        <span>Total Order Amount:</span>
+        <span style="color:var(--primary-navy);">₹${po.total_amount.toLocaleString('en-IN')}</span>
       </div>
     </div>
   `;
 
-  document.getElementById('btnPrintInvoiceAction').onclick = () => window.print();
-  modal.style.display = 'flex';
-}
+  document.getElementById('invoiceModal').style.display = 'flex';
+};
 
-// Replay Handling
-async function openReplayForRfq(rfqId) {
-  navigateTo('replay');
-  const selectElem = document.getElementById('selectReplayRfq');
-  if (selectElem) selectElem.value = rfqId;
-  await loadReplayTranscript(rfqId);
-}
+const btnCloseInvoice = document.getElementById('btnCloseInvoice');
+const btnDismissInvoice = document.getElementById('btnDismissInvoice');
+if (btnCloseInvoice) btnCloseInvoice.addEventListener('click', () => document.getElementById('invoiceModal').style.display = 'none');
+if (btnDismissInvoice) btnDismissInvoice.addEventListener('click', () => document.getElementById('invoiceModal').style.display = 'none');
 
-async function loadReplayTranscript(rfqId) {
-  try {
-    const res = await fetch(`/api/negotiations/${rfqId}`);
-    if (!res.ok) {
-      document.getElementById('replayTableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; padding:1.5rem; color:var(--text-muted)">No negotiation transcript found. Click 'Inspect' on the dashboard first to execute this negotiation.</td></tr>`;
-      document.getElementById('replayRationaleText').textContent = 'No session transcript recorded yet.';
-      return;
-    }
-    activeReplayData = await res.json();
-    setReplayRound(1);
-  } catch (err) {
-    console.error('Error fetching replay data:', err);
-  }
-}
-
-function setReplayRound(roundNum) {
-  currentReplayRound = roundNum;
-  document.querySelectorAll('.step-btn').forEach((btn, idx) => {
-    btn.classList.toggle('active', idx + 1 === roundNum);
+const btnPrintInvoiceAction = document.getElementById('btnPrintInvoiceAction');
+if (btnPrintInvoiceAction) {
+  btnPrintInvoiceAction.addEventListener('click', () => {
+    window.print();
   });
-  renderReplayRound(roundNum);
 }
 
-function renderReplayRound(roundNum) {
-  const tableBody = document.getElementById('replayTableBody');
-  const rationaleBox = document.getElementById('replayRationaleText');
-  if (!activeReplayData || !tableBody) return;
-
-  const roundRows = activeReplayData.rounds.filter((r) => r.round_number === roundNum);
-  tableBody.innerHTML = '';
-
-  const dict = translations[currentLang] || translations.en;
-
-  roundRows.forEach((r) => {
-    const supName = dict[`${r.supplier_id}_name`] || r.supplier_name;
-    let decPillClass = 'evaluated';
-    let decLabel = dict.decEvaluated;
-
-    if (r.decision === 'accepted') {
-      decPillClass = 'accepted';
-      decLabel = dict.decAccepted;
-    } else if (r.decision === 'rejected') {
-      decPillClass = 'rejected';
-      decLabel = dict.decRejected;
-    } else if (r.decision === 'countered') {
-      decPillClass = 'countered';
-      decLabel = dict.decCountered;
-    }
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${supName}</strong></td>
-      <td><strong>${formatINR(r.quote_per_box)}</strong></td>
-      <td>${r.buyer_counter ? formatINR(r.buyer_counter) : '—'}</td>
-      <td>${r.lead_days} days</td>
-      <td>&le; ${r.breakage_pct}%</td>
-      <td><strong>${r.composite_score}</strong> / 100</td>
-      <td><span class="decision-pill ${decPillClass}">${decLabel}</span></td>
-    `;
-    tableBody.appendChild(tr);
-  });
-
-  if (roundNum === 1) {
-    rationaleBox.innerHTML = `<strong>Round 1 Opening Analysis:</strong> Supplier agents submitted initial quotes based on standard factory price lists. The buyer agent evaluated quotes against target ceiling rates and prepared counter-proposals.`;
-  } else if (roundNum === 2) {
-    rationaleBox.innerHTML = `<strong>Round 2 Strategy Concessions:</strong> Suppliers adjusted quotes according to programmed negotiation personalities (Aggressive: strict margin defense; Cooperative: accelerated delivery; Balanced: proportional concessions).`;
-  } else {
-    rationaleBox.innerHTML = `<strong>Round 3 Best & Final Offer:</strong> Suppliers submitted final walk-away limits. The buyer agent completed multi-criteria weighted scoring. <strong>Winning Supplier: ${activeReplayData.recommended_supplier_name}</strong> locking in a final total of ${formatINR(activeReplayData.final_price)}.`;
-  }
-}
-
-// Fetch all RFQs from SQLite Backend API
-async function loadRfqsFromBackend() {
-  const tableBody = document.getElementById('rfqTableBody');
-  const selectReplay = document.getElementById('selectReplayRfq');
-  if (!tableBody) return;
-
+// --- REPORTS & ANALYTICS ---
+async function loadReports() {
   try {
-    const res = await fetch('/api/rfqs');
-    if (!res.ok) throw new Error('Failed to load RFQs');
-    const rfqs = await res.json();
+    const res = await fetch('/api/reports/summary');
+    if (!res.ok) return;
+    const data = await res.json();
 
-    tableBody.innerHTML = '';
-    if (selectReplay) selectReplay.innerHTML = '';
+    document.getElementById('reportAvgSavings').textContent = `${data.avg_savings_pct}%`;
+    document.getElementById('reportTotalSpent').textContent = `₹${data.total_spent.toLocaleString('en-IN')}`;
 
-    rfqs.forEach((rfq) => {
-      const translatedHub = getTranslatedHub(rfq.source_hub);
-      const statusBadgeHtml = getTranslatedStatusBadge(rfq.status);
-      const btnInspectText = translations[currentLang].btnViewDetails;
-      const btnReplayText = translations[currentLang].btnReplayRfq;
-      const btnApproveText = translations[currentLang].btnApproveRfq;
+    const winContainer = document.getElementById('supplierWinBars');
+    if (winContainer && data.supplier_win_distribution) {
+      winContainer.innerHTML = '';
+      const totalWins = Object.values(data.supplier_win_distribution).reduce((a, b) => a + b, 0) || 1;
 
-      const isReadyForApproval = rfq.status.includes('Ready for Approval') || rfq.status.includes('समीक्षा') || rfq.status.includes('मंजुरी');
-
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td><strong>${rfq.id}</strong><br><small style="color:var(--text-muted)">${rfq.category} ${rfq.size} (Qty: ${rfq.quantity})</small></td>
-        <td>${translatedHub}</td>
-        <td>${formatINR(rfq.budget_ceiling)}</td>
-        <td>${statusBadgeHtml}</td>
-        <td style="white-space:nowrap;">
-          <button class="btn-sm" onclick="triggerNegotiation('${rfq.id}')">${btnInspectText}</button>
-          <button class="btn-outline-sm" onclick="openReplayForRfq('${rfq.id}')">${btnReplayText}</button>
-          ${isReadyForApproval ? `<button class="btn-success-sm" onclick="approveNegotiationRfq('${rfq.id}')">${btnApproveText}</button>` : ''}
-        </td>
-      `;
-      tableBody.appendChild(row);
-
-      if (selectReplay) {
-        const opt = document.createElement('option');
-        opt.value = rfq.id;
-        opt.textContent = `${rfq.id} - ${rfq.category} (${rfq.quantity})`;
-        selectReplay.appendChild(opt);
-      }
-    });
-
-    const activeKpi = document.getElementById('metricActive');
-    if (activeKpi) activeKpi.textContent = rfqs.length;
-
-  } catch (err) {
-    console.error('Error fetching RFQs:', err);
-  }
-}
-
-// Load Simulated Suppliers
-async function loadSuppliersFromBackend() {
-  const container = document.getElementById('suppliersContainer');
-  if (!container) return;
-
-  try {
-    const res = await fetch('/api/suppliers');
-    if (!res.ok) throw new Error('Failed to load suppliers');
-    const suppliers = await res.json();
-
-    container.innerHTML = '';
-    suppliers.forEach((s) => {
-      const langDict = translations[currentLang] || translations.en;
-      const displayName = langDict[`${s.id}_name`] || s.name;
-      const displayHub = langDict[`${s.id}_hub`] || s.hub_location;
-      const strategyKey = `strat_${s.agent_strategy}`;
-      const displayStrategy = langDict[strategyKey] || s.agent_strategy;
-
-      const card = document.createElement('article');
-      card.className = 'supplier-card';
-      card.innerHTML = `
-        <div>
-          <div class="supplier-header">
-            <span class="supplier-name">${displayName}</span>
-            <span class="strategy-badge ${s.agent_strategy}">${displayStrategy}</span>
+      Object.entries(data.supplier_win_distribution).forEach(([name, count]) => {
+        const pct = Math.round((count / totalWins) * 100);
+        const row = document.createElement('div');
+        row.style.marginBottom = '0.75rem';
+        row.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:0.25rem;">
+            <span><strong>${name}</strong> (${count} wins)</span>
+            <span>${pct}%</span>
           </div>
-          <div class="supplier-location">📍 ${displayHub}</div>
-          <div class="supplier-specs">
-            <div class="spec-item">
-              <span class="spec-label">${langDict.supplierBasePrice}</span>
-              <span class="spec-value">${formatINR(s.base_price_per_box)}</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">${langDict.supplierWalkaway}</span>
-              <span class="spec-value">${formatINR(s.min_walkaway_price)}</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">${langDict.supplierLeadTime}</span>
-              <span class="spec-value">${s.min_lead_days} - ${s.standard_lead_days} days</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">${langDict.supplierBreakage}</span>
-              <span class="spec-value">&le; ${s.offered_breakage_pct}%</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">${langDict.supplierQuality}</span>
-              <span class="spec-value">${s.quality_score}/100</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">${langDict.supplierReliability}</span>
-              <span class="spec-value">${s.reliability_score}/100</span>
-            </div>
+          <div style="background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden;">
+            <div style="background:var(--primary-navy); width:${pct}%; height:100%;"></div>
           </div>
-        </div>
-      `;
-      container.appendChild(card);
-    });
+        `;
+        winContainer.appendChild(row);
+      });
+    }
   } catch (err) {
-    console.error('Error fetching suppliers:', err);
+    console.error('Failed to load reports summary:', err);
   }
 }
 
-// Handle Form Submission (POST /api/rfqs)
-async function handleRfqSubmit(e) {
-  e.preventDefault();
-  const alertBox = document.getElementById('rfqAlert');
-  alertBox.className = 'alert-box';
-  alertBox.textContent = '';
+// --- NOTIFICATION DRAWER ---
+function setupNotificationDrawer() {
+  const btn = document.getElementById('btnNotifBell');
+  const drawer = document.getElementById('notifDrawer');
+  const btnClose = document.getElementById('btnCloseNotif');
 
-  const totalWeights = updateWeightSumDisplay();
-  if (totalWeights !== 100) {
-    alertBox.textContent = `${translations[currentLang].valErrTotalWeight} ${totalWeights}%`;
-    alertBox.className = 'alert-box danger';
-    return;
-  }
-
-  const deadlineInput = document.getElementById('deliveryDeadline').value;
-  if (!deadlineInput) {
-    alertBox.textContent = translations[currentLang].valErrFutureDate;
-    alertBox.className = 'alert-box danger';
-    return;
-  }
-
-  const payload = {
-    category: document.getElementById('tileCategory').value,
-    size: document.getElementById('tileSize').value,
-    quantity: Number(document.getElementById('boxQuantity').value),
-    budget_ceiling: Number(document.getElementById('budgetCeiling').value),
-    delivery_deadline: deadlineInput,
-    quality_grade: document.getElementById('qualityGrade').value,
-    max_breakage: Number(document.getElementById('maxBreakage').value),
-    weights: {
-      price: Number(document.getElementById('weightPrice').value),
-      quality: Number(document.getElementById('weightQuality').value),
-      delivery: Number(document.getElementById('weightDelivery').value),
-      warranty: Number(document.getElementById('weightWarranty').value)
-    }
-  };
-
-  try {
-    const res = await fetch('/api/rfqs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+  if (btn) {
+    btn.addEventListener('click', () => {
+      drawer.classList.toggle('open');
+      const badge = document.getElementById('notifBadge');
+      if (badge) badge.textContent = '0';
     });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.detail || 'Could not save RFQ');
-    }
-
-    alertBox.textContent = translations[currentLang].valSuccessCreated;
-    alertBox.className = 'alert-box success';
-
-    setTimeout(async () => {
-      await loadRfqsFromBackend();
-      document.getElementById('rfqForm').reset();
-      document.getElementById('deliveryDeadline').value = getDefaultDeadline();
-      updateWeightSumDisplay();
-      alertBox.className = 'alert-box';
-      navigateTo('dashboard');
-    }, 1000);
-
-  } catch (err) {
-    alertBox.textContent = `Error: ${err.message}`;
-    alertBox.className = 'alert-box danger';
+  }
+  if (btnClose) {
+    btnClose.addEventListener('click', () => drawer.classList.remove('open'));
   }
 }
 
-function getDefaultDeadline() {
-  const d = new Date();
-  d.setDate(d.getDate() + 14);
-  return d.toISOString().split('T')[0];
+function triggerInAppNotification(msg) {
+  const list = document.getElementById('notifList');
+  const badge = document.getElementById('notifBadge');
+  if (!list) return;
+
+  const li = document.createElement('li');
+  li.className = 'notif-item';
+  li.innerHTML = `
+    <div style="font-weight:600; font-size:0.85rem; margin-bottom:0.15rem;">Procurement Update</div>
+    <div style="font-size:0.8rem; color:#475569;">${msg}</div>
+    <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.25rem;">${new Date().toLocaleTimeString()}</div>
+  `;
+  list.prepend(li);
+
+  if (badge) {
+    let current = parseInt(badge.textContent, 10) || 0;
+    badge.textContent = (current + 1).toString();
+  }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const selector = document.getElementById('languageSelector');
-  if (selector) {
-    selector.value = currentLang;
-    selector.addEventListener('change', (e) => setLanguage(e.target.value));
-  }
-
-  const deadlineElem = document.getElementById('deliveryDeadline');
-  if (deadlineElem) {
-    deadlineElem.value = getDefaultDeadline();
-    deadlineElem.min = new Date().toISOString().split('T')[0];
-  }
-
-  document.querySelectorAll('.weight-input').forEach((input) => {
-    input.addEventListener('input', updateWeightSumDisplay);
-  });
-
-  // Notification Drawer
-  const bellBtn = document.getElementById('btnNotifBell');
-  const notifDrawer = document.getElementById('notifDrawer');
-  const btnCloseNotif = document.getElementById('btnCloseNotif');
-
-  bellBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    notifDrawer.classList.toggle('open');
-  });
-
-  btnCloseNotif?.addEventListener('click', () => notifDrawer.classList.remove('open'));
-  document.addEventListener('click', (e) => {
-    if (!notifDrawer?.contains(e.target) && e.target !== bellBtn) {
-      notifDrawer?.classList.remove('open');
-    }
-  });
-
-  // Modal Closers
-  const modal = document.getElementById('negotiationModal');
-  document.getElementById('btnCloseModal')?.addEventListener('click', () => modal.style.display = 'none');
-
-  const invoiceModal = document.getElementById('invoiceModal');
-  document.getElementById('btnCloseInvoice')?.addEventListener('click', () => invoiceModal.style.display = 'none');
-  document.getElementById('btnDismissInvoice')?.addEventListener('click', () => invoiceModal.style.display = 'none');
-
-  // Replay Step Buttons
-  document.getElementById('btnStepRound1')?.addEventListener('click', () => setReplayRound(1));
-  document.getElementById('btnStepRound2')?.addEventListener('click', () => setReplayRound(2));
-  document.getElementById('btnStepRound3')?.addEventListener('click', () => setReplayRound(3));
-
-  document.getElementById('selectReplayRfq')?.addEventListener('change', (e) => {
-    loadReplayTranscript(e.target.value);
-  });
-
-  // Navigation Links
-  document.getElementById('navLinkDashboard')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('dashboard');
-  });
-
-  document.getElementById('navLinkNewRfq')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('new-rfq');
-  });
-
-  document.getElementById('navLinkSuppliers')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('suppliers');
-  });
-
-  document.getElementById('navLinkReplay')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('replay');
-    const selectElem = document.getElementById('selectReplayRfq');
-    if (selectElem && selectElem.value) loadReplayTranscript(selectElem.value);
-  });
-
-  document.getElementById('navLinkApprovals')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('approvals');
-    loadOrdersFromBackend();
-  });
-
-  document.getElementById('navLinkReports')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('reports');
-    loadReportsData();
-  });
-
-  document.getElementById('btnOpenRfq')?.addEventListener('click', () => {
-    navigateTo('new-rfq');
-  });
-
-  document.getElementById('btnCancelRfq')?.addEventListener('click', () => {
-    navigateTo('dashboard');
-  });
-
-  document.getElementById('rfqForm')?.addEventListener('submit', handleRfqSubmit);
-
-  const savingsElem = document.getElementById('metricSavings');
-  if (savingsElem) savingsElem.textContent = formatINR(142500);
-
-  setLanguage(currentLang);
-  updateWeightSumDisplay();
-  loadRfqsFromBackend();
-  loadSuppliersFromBackend();
-  loadNotifications();
-  loadOrdersFromBackend();
-  loadReportsData();
-});

@@ -1,7 +1,7 @@
 /**
  * NegotiAgent AI - Frontend Application Controller
  * Handles SPA navigation, API requests, dynamic supplier registration,
- * autonomous auctions, replay, approvals, and PO printing with authentication controls.
+ * autonomous auctions, replay, approvals, and PO printing.
  */
 
 let currentLang = localStorage.getItem('negotiagent_lang') || 'en';
@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSupplierModal();
   setupReplayControls();
   setupNotificationDrawer();
-  setupSignOut();
 
   // Load baseline data
   loadDashboardData();
@@ -28,30 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadOrders();
   loadReports();
 });
-
-// --- AUTHENTICATION & SIGN OUT ---
-function setupSignOut() {
-  const btnSignOut = document.getElementById('btnSignOut');
-  if (btnSignOut) {
-    btnSignOut.onclick = function(e) {
-      if (e) e.preventDefault();
-      sessionStorage.clear();
-      localStorage.clear();
-      sessionStorage.removeItem('negotiagent_auth');
-      localStorage.removeItem('negotiagent_auth');
-      window.location.replace('/login.html');
-    };
-  }
-}
-
-// Global fallback callable from anywhere
-window.handleSignOut = function() {
-  sessionStorage.clear();
-  localStorage.clear();
-  sessionStorage.removeItem('negotiagent_auth');
-  localStorage.removeItem('negotiagent_auth');
-  window.location.replace('/login.html');
-};
 
 // --- TRANSLATIONS & LOCALIZATION ---
 function initTranslations() {

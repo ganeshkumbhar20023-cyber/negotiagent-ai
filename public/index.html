@@ -32,8 +32,14 @@
         <span id="notifBadge" class="notif-badge">0</span>
       </button>
 
-      <!-- Owner Sign Out -->
-      <button id="btnSignOut" onclick="handleSignOut()" class="btn-secondary btn-sm" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; font-weight:700; margin-right: 0.5rem; cursor: pointer;">Sign Out</button>
+      <!-- Owner Sign Out Button -->
+      <a href="javascript:void(0)" 
+         id="btnSignOut" 
+         onclick="handleSignOut(event)" 
+         class="btn-secondary btn-sm" 
+         style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; font-weight:700; margin-right: 0.5rem; text-decoration:none; display:inline-block; padding: 0.35rem 0.75rem; border-radius: 4px; cursor:pointer;">
+         Sign Out
+      </a>
 
       <!-- Language Selector -->
       <div class="lang-select-wrapper">
@@ -480,19 +486,30 @@
     <p data-i18n="footerText">NegotiAgent AI - Final Year Academic Project developed for Shree Mahalaxmi Marbel and Granite by DYPCET Kolhapur students (Rushikesh Powar, Rohit Mengane, Ganesh Kumbhar, Pawan Payghan).</p>
   </footer>
 
-  <!-- Direct Sign-Out Fallback Handler -->
-  <script>
-    function handleSignOut() {
-      sessionStorage.clear();
-      localStorage.clear();
-      sessionStorage.removeItem('negotiagent_auth');
-      localStorage.removeItem('negotiagent_auth');
-      window.location.replace('/login.html');
-    }
-  </script>
-
   <!-- Scripts -->
   <script src="/js/translations.js"></script>
   <script src="/js/app.js"></script>
+
+  <!-- Bulletproof Sign-Out Handler (Must remain below app.js) -->
+  <script>
+    function handleSignOut(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) {
+          event.stopImmediatePropagation();
+        }
+      }
+      try {
+        sessionStorage.clear();
+        localStorage.clear();
+        sessionStorage.removeItem('negotiagent_auth');
+        localStorage.removeItem('negotiagent_auth');
+      } catch (err) {
+        console.error('Storage clear error:', err);
+      }
+      window.location.href = window.location.origin + '/login.html?logout=' + Date.now();
+    }
+  </script>
 </body>
 </html>

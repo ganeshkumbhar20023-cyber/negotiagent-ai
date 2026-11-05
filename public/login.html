@@ -3,127 +3,216 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Gateway | Shree Mahalaxmi Marbel and Granite</title>
+  <title>Unified Gateway | Shree Mahalaxmi Marbel and Granite</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
+    * { box-sizing: border-box; }
     body {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      background: linear-gradient(135deg, #0b1120 0%, #1e293b 100%);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 1.25rem;
+      padding: 1.5rem 1rem;
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
-    .gateway-container {
+    .portal-wrapper {
       width: 100%;
-      max-width: 920px;
+      max-width: 1100px;
       background: #ffffff;
       border-radius: 14px;
-      box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 25px 45px -10px rgba(0, 0, 0, 0.5);
       overflow: hidden;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1.35fr;
     }
-    @media (max-width: 768px) {
-      .gateway-container {
+    @media (max-width: 880px) {
+      .portal-wrapper {
         grid-template-columns: 1fr;
       }
     }
-    .gateway-side {
-      padding: 2.5rem 2rem;
+    .portal-section {
+      padding: 2.25rem 2rem;
     }
-    .owner-side {
-      border-right: 1px solid #e2e8f0;
+    .owner-section {
       background: #ffffff;
+      border-right: 2px solid #e2e8f0;
     }
-    .supplier-side {
+    .supplier-section {
       background: #f8fafc;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
     }
     .role-badge {
       display: inline-block;
-      padding: 0.3rem 0.75rem;
+      padding: 0.25rem 0.75rem;
       font-size: 0.75rem;
       font-weight: 700;
       border-radius: 9999px;
       text-transform: uppercase;
+      letter-spacing: 0.05em;
       margin-bottom: 0.75rem;
-      letter-spacing: 0.04em;
     }
-    .badge-owner { background: #fee2e2; color: #991b1b; }
-    .badge-supplier { background: #fef3c7; color: #92400e; }
-    .gateway-title { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem; }
-    .gateway-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.45; }
-    .form-group { margin-bottom: 1rem; text-align: left; }
+    .badge-buyer { background: #fee2e2; color: #991b1b; }
+    .badge-seller { background: #fef3c7; color: #92400e; }
+    .title-h2 { font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem; }
+    .desc-p { font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.45; }
+    .form-group { margin-bottom: 0.9rem; text-align: left; }
     .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
-    .form-control { width: 100%; box-sizing: border-box; padding: 0.7rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
-    .form-control:focus { outline: none; border-color: #0f172a; box-shadow: 0 0 0 2px rgba(15,23,42,0.15); }
-    .btn-action { width: 100%; padding: 0.85rem; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.95rem; box-sizing: border-box; transition: background 0.2s; }
-    .btn-owner { background: #0f172a; color: #ffffff; }
+    .form-control { width: 100%; padding: 0.65rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+    .form-control:focus { outline: none; border-color: #0f172a; box-shadow: 0 0 0 2px rgba(15,23,42,0.12); }
+    .btn-submit { width: 100%; padding: 0.8rem; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.95rem; transition: background 0.2s; }
+    .btn-owner { background: #0f172a; color: #ffffff; margin-top: 0.5rem; }
     .btn-owner:hover { background: #1e293b; }
-    .btn-supplier { background: #d97706; color: #ffffff; text-decoration: none; text-align: center; display: block; }
-    .btn-supplier:hover { background: #b45309; }
-    .footer-note { font-size: 0.78rem; color: #94a3b8; text-align: center; margin-top: 1.75rem; }
-    .demo-hint { font-size: 0.78rem; background: #f1f5f9; padding: 0.6rem 0.85rem; border-radius: 6px; border-left: 3px solid #0f172a; margin-top: 1.25rem; color: #475569; }
+    .btn-vendor { background: #d97706; color: #ffffff; margin-top: 0.5rem; }
+    .btn-vendor:hover { background: #b45309; }
+    .supplier-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; }
+    .sub-tab { flex: 1; padding: 0.55rem; border: 1px solid #cbd5e1; background: #ffffff; border-radius: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer; text-align: center; }
+    .sub-tab.active { background: #d97706; color: #ffffff; border-color: #d97706; }
+    .info-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.75rem; font-size: 0.85rem; margin-bottom: 1rem; }
+    .footer-note { font-size: 0.78rem; color: #94a3b8; text-align: center; margin-top: 1.5rem; }
   </style>
 </head>
 <body>
 
-  <div class="gateway-container">
-    <!-- LEFT: PROPRIETOR / BUYER AUTHENTICATION -->
-    <div class="gateway-side owner-side">
-      <span class="role-badge badge-owner">Authorized Personnel</span>
-      <h2 class="gateway-title">Proprietor Sign-In</h2>
-      <p class="gateway-desc">Access private procurement, autonomous multi-agent auctions, internal budget ceilings, and GST Purchase Order approvals.</p>
+  <div class="portal-wrapper">
+
+    <!-- LEFT: OWNER / BUYER SIGN-IN (CREDENTIALS HIDDEN) -->
+    <div class="portal-section owner-section">
+      <span class="role-badge badge-buyer">Proprietor Access</span>
+      <h2 class="title-h2">Buyer Sign-In</h2>
+      <p class="desc-p">Secure commercial dashboard for Mr. Vikram Gurav. Access budget ceilings, autonomous agent auctions, full audit logs, and GST invoices.</p>
 
       <div id="loginAlert" class="alert-box" style="display:none; margin-bottom: 1rem;"></div>
 
       <form id="ownerLoginForm">
         <div class="form-group">
-          <label for="ownerUsername">Admin Username</label>
-          <input type="text" id="ownerUsername" class="form-control" value="admin" required>
+          <label for="ownerUsername">Proprietor Username</label>
+          <input type="text" id="ownerUsername" class="form-control" placeholder="Enter username" autocomplete="username" required>
         </div>
         <div class="form-group">
           <label for="ownerPassword">Password</label>
-          <input type="password" id="ownerPassword" class="form-control" value="mahalaxmi@123" required>
+          <input type="password" id="ownerPassword" class="form-control" placeholder="Enter password" autocomplete="current-password" required>
         </div>
-        <button type="submit" class="btn-action btn-owner">Sign In to Dashboard →</button>
+        <button type="submit" class="btn-submit btn-owner">Sign In to Dashboard →</button>
       </form>
-
-      <div class="demo-hint">
-        <strong>Viva Credentials:</strong><br>
-        Username: <code>admin</code> | Password: <code>mahalaxmi@123</code>
-      </div>
     </div>
 
-    <!-- RIGHT: SUPPLIER ACCESS (MOBILE / DESKTOP) -->
-    <div class="gateway-side supplier-side">
-      <div>
-        <span class="role-badge badge-supplier">Vendor & Supplier Portal</span>
-        <h2 class="gateway-title">Supplier Bidding Terminal</h2>
-        <p class="gateway-desc">Dedicated portal for regional tile manufacturers, marble quarries, and granite yard representatives (Mobile or Desktop).</p>
+    <!-- RIGHT: SUPPLIER PORTAL (REGISTER & NEGOTIATE ON SAME PAGE) -->
+    <div class="portal-section supplier-section">
+      <span class="role-badge badge-seller">Supplier Terminal</span>
+      <h2 class="title-h2">Supplier Registration & Bidding</h2>
+      <p class="desc-p">Regional supplier portal for mobile or desktop. Register your company or submit live bids directly to the buyer.</p>
 
-        <ul style="font-size: 0.85rem; color: #475569; line-height: 1.65; padding-left: 1.2rem; margin-bottom: 1.5rem;">
-          <li>Self-register your company, depot, and factory hub</li>
-          <li>Review public consignment requirements</li>
-          <li>Submit live 3-round bids and counters directly</li>
-          <li><strong>Sealed-bid protection:</strong> Confidential competitor rates</li>
-        </ul>
+      <!-- Sub-Tabs for Supplier: Register vs. Live Bidding -->
+      <div class="supplier-tabs">
+        <button id="btnTabRegister" class="sub-tab active" type="button">1. Register Company</button>
+        <button id="btnTabNegotiate" class="sub-tab" type="button">2. Live Bidding Room</button>
       </div>
 
-      <div>
-        <a href="/supplier.html" class="btn-action btn-supplier">📱 Enter Supplier Portal (Mobile / Desktop) →</a>
-        <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-top: 0.6rem;">
-          No password needed. Fully responsive on smartphone screens.
+      <!-- VIEW A: SUPPLIER REGISTRATION FORM -->
+      <div id="paneSupplierRegister">
+        <div id="regAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
+        <form id="supplierQuickRegForm">
+          <div class="form-group">
+            <label for="regId">Supplier ID Code</label>
+            <input type="text" id="regId" class="form-control" value="SUP-KOLH-01" required>
+          </div>
+          <div class="form-group">
+            <label for="regName">Company / Depot Name</label>
+            <input type="text" id="regName" class="form-control" placeholder="e.g. Kolhapur Regional Tiles Mart" required>
+          </div>
+          <div class="form-group">
+            <label for="regHub">Depot / Manufacturing Hub</label>
+            <input type="text" id="regHub" class="form-control" placeholder="e.g. MIDC Shiroli, Kolhapur" required>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.65rem;">
+            <div class="form-group">
+              <label for="regBase">List Quote (₹ / Box)</label>
+              <input type="number" id="regBase" class="form-control" value="540" required>
+            </div>
+            <div class="form-group">
+              <label for="regWalkaway">Bottom Margin (₹ / Box)</label>
+              <input type="number" id="regWalkaway" class="form-control" value="480" required>
+            </div>
+            <div class="form-group">
+              <label for="regLead">Standard Lead (Days)</label>
+              <input type="number" id="regLead" class="form-control" value="4" required>
+            </div>
+            <div class="form-group">
+              <label for="regBreakage">Breakage Guarantee (%)</label>
+              <input type="number" id="regBreakage" class="form-control" step="0.1" value="0.8" required>
+            </div>
+          </div>
+          <button type="submit" class="btn-submit btn-vendor">Register Company & Proceed to Bidding →</button>
+        </form>
+      </div>
+
+      <!-- VIEW B: LIVE NEGOTIATION FORM -->
+      <div id="paneSupplierNegotiate" style="display:none;">
+        <div id="bidAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
+        <form id="supplierLiveBidForm">
+          <div class="form-group">
+            <label for="bidRfqSelect">Active Consignment Tender:</label>
+            <select id="bidRfqSelect" class="form-control" required></select>
+          </div>
+
+          <!-- Public Details: Supplier never sees the buyer's private budget ceiling -->
+          <div class="info-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+              <span style="color:#64748b;">Consignment Material:</span>
+              <strong id="dispMaterial">--</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:#64748b;">Quantity Demanded:</span>
+              <strong id="dispQty">-- Units</strong>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bidSupplierSelect">Your Registered Company:</label>
+            <select id="bidSupplierSelect" class="form-control" required></select>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.65rem;">
+            <div class="form-group">
+              <label for="bidRound">Auction Round</label>
+              <select id="bidRound" class="form-control">
+                <option value="1">Round 1 (Opening Quote)</option>
+                <option value="2">Round 2 (Concession Counter)</option>
+                <option value="3">Round 3 (Final Offer)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bidRate">Rate / Box (₹)</label>
+              <input type="number" id="bidRate" class="form-control" placeholder="e.g. 520" required>
+            </div>
+            <div class="form-group">
+              <label for="bidLead">Lead Days</label>
+              <input type="number" id="bidLead" class="form-control" value="3" required>
+            </div>
+            <div class="form-group">
+              <label for="bidBreakage">Max Breakage (%)</label>
+              <input type="number" id="bidBreakage" class="form-control" step="0.1" value="0.8" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bidRemarks">Message / Notes to Proprietor</label>
+            <input type="text" id="bidRemarks" class="form-control" placeholder="e.g. Ready stock, transit wrapping included">
+          </div>
+
+          <button type="submit" class="btn-submit btn-vendor">🚀 Send Live Bid to Buyer</button>
+        </form>
+
+        <div id="bidFeedback" style="display:none; margin-top: 1rem; background: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 0.75rem;">
+          <div style="font-weight: 700; color: #065f46; font-size: 0.88rem;">Buyer Agent Response Received:</div>
+          <div id="bidFeedbackText" style="font-size: 0.83rem; margin-top: 0.25rem; color: #047857;"></div>
         </div>
       </div>
+
     </div>
+
   </div>
 
   <div class="footer-note">
@@ -131,18 +220,173 @@
   </div>
 
   <script>
+    let globalRfqs = [];
+    let globalSuppliers = [];
+
+    // --- OWNER SIGN-IN AUTHENTICATION ---
     document.getElementById('ownerLoginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const u = document.getElementById('ownerUsername').value.trim();
       const p = document.getElementById('ownerPassword').value.trim();
       const alertBox = document.getElementById('loginAlert');
 
+      // Credentials known only by the owner
       if ((u === 'admin' && p === 'mahalaxmi@123') || (u === 'vikram' && p === 'kolhapur')) {
         sessionStorage.setItem('negotiagent_auth', 'authenticated_owner');
         window.location.href = '/index.html';
       } else {
         alertBox.className = 'alert-box error';
-        alertBox.textContent = 'Invalid credentials. Use admin / mahalaxmi@123 for demo.';
+        alertBox.textContent = 'Invalid username or password.';
+        alertBox.style.display = 'block';
+      }
+    });
+
+    // --- SUPPLIER TAB TOGGLING ON THE SAME PAGE ---
+    const btnTabRegister = document.getElementById('btnTabRegister');
+    const btnTabNegotiate = document.getElementById('btnTabNegotiate');
+    const paneSupplierRegister = document.getElementById('paneSupplierRegister');
+    const paneSupplierNegotiate = document.getElementById('paneSupplierNegotiate');
+
+    btnTabRegister.addEventListener('click', () => {
+      btnTabRegister.classList.add('active');
+      btnTabNegotiate.classList.remove('active');
+      paneSupplierRegister.style.display = 'block';
+      paneSupplierNegotiate.style.display = 'none';
+    });
+
+    btnTabNegotiate.addEventListener('click', () => {
+      btnTabNegotiate.classList.add('active');
+      btnTabRegister.classList.remove('active');
+      paneSupplierRegister.style.display = 'none';
+      paneSupplierNegotiate.style.display = 'block';
+      loadBiddingRoomData();
+    });
+
+    // Suggest a random unique ID for the supplier
+    document.getElementById('regId').value = 'SUP-VENDOR-' + Math.floor(100 + Math.random() * 900);
+
+    // --- SUPPLIER QUICK REGISTRATION ---
+    document.getElementById('supplierQuickRegForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('regAlert');
+      alertBox.style.display = 'none';
+
+      const payload = {
+        id: document.getElementById('regId').value.trim(),
+        name: document.getElementById('regName').value.trim(),
+        hub_location: document.getElementById('regHub').value.trim(),
+        agent_strategy: 'balanced',
+        base_price_per_box: parseFloat(document.getElementById('regBase').value),
+        min_walkaway_price: parseFloat(document.getElementById('regWalkaway').value),
+        standard_lead_days: parseInt(document.getElementById('regLead').value, 10),
+        min_lead_days: Math.max(1, parseInt(document.getElementById('regLead').value, 10) - 2),
+        offered_breakage_pct: parseFloat(document.getElementById('regBreakage').value),
+        quality_score: 92.0,
+        reliability_score: 90.0
+      };
+
+      try {
+        const res = await fetch('/api/suppliers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Registration failed');
+        }
+
+        alertBox.className = 'alert-box success';
+        alertBox.textContent = `Company "${payload.name}" successfully registered! Opening Bidding Room...`;
+        alertBox.style.display = 'block';
+
+        setTimeout(() => {
+          btnTabNegotiate.click();
+        }, 900);
+      } catch (err) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = err.message;
+        alertBox.style.display = 'block';
+      }
+    });
+
+    // --- LOAD RFQS & REGISTERED SUPPLIERS INTO LIVE BIDDING ROOM ---
+    async function loadBiddingRoomData() {
+      try {
+        const [rRes, sRes] = await Promise.all([fetch('/api/rfqs'), fetch('/api/suppliers')]);
+        if (rRes.ok) globalRfqs = await rRes.json();
+        if (sRes.ok) globalSuppliers = await sRes.json();
+
+        const rfqSelect = document.getElementById('bidRfqSelect');
+        const supSelect = document.getElementById('bidSupplierSelect');
+
+        rfqSelect.innerHTML = globalRfqs.length > 0 
+          ? globalRfqs.map(r => `<option value="${r.id}">${r.id} - ${r.category}</option>`).join('')
+          : '<option value="">-- No open RFQs found --</option>';
+
+        supSelect.innerHTML = globalSuppliers.length > 0
+          ? globalSuppliers.map(s => `<option value="${s.id}">${s.name} (${s.hub_location})</option>`).join('')
+          : '<option value="">-- Please register your company first --</option>';
+
+        updatePublicTenderInfo();
+        rfqSelect.onchange = updatePublicTenderInfo;
+      } catch (err) {
+        console.error('Error loading bidding data:', err);
+      }
+    }
+
+    function updatePublicTenderInfo() {
+      const rfqId = document.getElementById('bidRfqSelect').value;
+      const r = globalRfqs.find(x => x.id === rfqId);
+      if (r) {
+        document.getElementById('dispMaterial').textContent = `${r.category} (${r.size})`;
+        document.getElementById('dispQty').textContent = `${r.quantity} Boxes`;
+      }
+    }
+
+    // --- SUBMIT LIVE SEALED BID ---
+    document.getElementById('supplierLiveBidForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('bidAlert');
+      const feedback = document.getElementById('bidFeedback');
+      const feedbackText = document.getElementById('bidFeedbackText');
+      alertBox.style.display = 'none';
+
+      const payload = {
+        rfq_id: document.getElementById('bidRfqSelect').value,
+        supplier_id: document.getElementById('bidSupplierSelect').value,
+        round_number: parseInt(document.getElementById('bidRound').value, 10),
+        rate_per_box: parseFloat(document.getElementById('bidRate').value),
+        lead_days: parseInt(document.getElementById('bidLead').value, 10),
+        breakage_pct: parseFloat(document.getElementById('bidBreakage').value),
+        remarks: document.getElementById('bidRemarks').value
+      };
+
+      try {
+        const res = await fetch('/api/negotiations/live-bid', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Bid submission failed');
+        }
+
+        const data = await res.json();
+        feedback.style.display = 'block';
+        feedbackText.innerHTML = `
+          <strong>Your Offer:</strong> ₹${data.submitted_rate}/box | <strong>Buyer Counter:</strong> ₹${data.buyer_counter}/box<br>
+          <strong>Status:</strong> ${data.decision}
+        `;
+
+        // Automatically advance round for the supplier
+        if (payload.round_number < 3) {
+          document.getElementById('bidRound').value = (payload.round_number + 1).toString();
+        }
+      } catch (err) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = err.message;
         alertBox.style.display = 'block';
       }
     });

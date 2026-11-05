@@ -1,7 +1,7 @@
 /**
  * NegotiAgent AI - Frontend Application Controller
  * Handles SPA navigation, API requests, dynamic supplier registration,
- * autonomous auctions, mobile phone bidding terminal, replay, approvals, and PO printing.
+ * autonomous auctions, replay, approvals, and PO printing with authentication controls.
  */
 
 let currentLang = localStorage.getItem('negotiagent_lang') || 'en';
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSupplierModal();
   setupReplayControls();
   setupNotificationDrawer();
-  setupMobilePortal();
+  setupSignOut();
 
   // Load baseline data
   loadDashboardData();
@@ -28,6 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
   loadOrders();
   loadReports();
 });
+
+// --- AUTHENTICATION & SIGN OUT ---
+function setupSignOut() {
+  const btnSignOut = document.getElementById('btnSignOut');
+  if (btnSignOut) {
+    btnSignOut.addEventListener('click', () => {
+      sessionStorage.removeItem('negotiagent_auth');
+      window.location.href = '/login.html';
+    });
+  }
+}
 
 // --- TRANSLATIONS & LOCALIZATION ---
 function initTranslations() {
@@ -77,8 +88,7 @@ function setupNavigation() {
     navLinkSuppliers: 'viewSuppliers',
     navLinkReplay: 'viewReplay',
     navLinkApprovals: 'viewApprovals',
-    navLinkReports: 'viewReports',
-    navLinkPortal: 'viewPortal'
+    navLinkReports: 'viewReports'
   };
 
   Object.entries(navLinks).forEach(([linkId, viewId]) => {
@@ -113,7 +123,6 @@ function switchView(viewId, activeLinkEl) {
   if (viewId === 'viewSuppliers') loadSuppliers();
   if (viewId === 'viewApprovals') loadOrders();
   if (viewId === 'viewReports') loadReports();
-  if (viewId === 'viewPortal') populatePortalSelects();
 }
 
 // --- DASHBOARD & RFQS ---
@@ -128,7 +137,6 @@ async function loadDashboardData() {
       cachedRfqs = await rfqRes.json();
       renderRfqTable();
       populateReplayDropdown();
-      populatePortalSelects();
     }
 
     if (reportRes.ok) {
@@ -270,7 +278,7 @@ function setupRfqForm() {
   }
 }
 
-// --- DYNAMIC SUPPLIER REGISTRATION (FRONTEND MODAL) ---
+// --- DYNAMIC SUPPLIER REGISTRATION (MODAL) ---
 function setupSupplierModal() {
   const modal = document.getElementById('addSupplierModal');
   const btnOpen = document.getElementById('btnOpenAddSupplierModal');
@@ -344,7 +352,7 @@ function setupSupplierModal() {
 
         hideModal();
         await loadSuppliers();
-        triggerInAppNotification(`New Supplier Agent "${payload.name}" registered and deployed to auction!`);
+        triggerInAppNotification(`New Supplier Agent "${payload.name}" registered and active in SQLite!`);
       } catch (err) {
         alertBox.className = 'alert-box error';
         alertBox.textContent = err.message;
@@ -360,7 +368,6 @@ async function loadSuppliers() {
     if (res.ok) {
       cachedSuppliers = await res.json();
       renderSuppliersGrid();
-      populatePortalSelects();
     }
   } catch (err) {
     console.error('Failed to load suppliers:', err);
@@ -807,94 +814,5 @@ function triggerInAppNotification(msg) {
   if (badge) {
     let current = parseInt(badge.textContent, 10) || 0;
     badge.textContent = (current + 1).toString();
-  }
-}
-
-// --- SUPPLIER MOBILE PORTAL LOGIC ---
-function setupMobilePortal() {
-  const form = document.getElementById('mobileBidForm');
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const alertBox = document.getElementById('portalAlert');
-      const feedbackBox = document.getElementById('portalLiveFeedback');
-      const feedbackContent = document.getElementById('portalFeedbackContent');
-
-      alertBox.style.display = 'none';
-
-      const payload = {
-        rfq_id: document.getElementById('portalRfqSelect').value,
-        supplier_id: document.getElementById('portalSupplierSelect').value,
-        round_number: parseInt(document.getElementById('portalRound').value, 10),
-        rate_per_box: parseFloat(document.getElementById('portalRate').value),
-        lead_days: parseInt(document.getElementById('portalLeadDays').value, 10),
-        breakage_pct: parseFloat(document.getElementById('portalBreakage').value),
-        remarks: document.getElementById('portalRemarks').value
-      };
-
-      try {
-        const res = await fetch('/api/negotiations/live-bid', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || 'Failed to submit bid');
-        }
-
-        const data = await res.json();
-        feedbackBox.style.display = 'block';
-        feedbackContent.innerHTML = `
-          <strong>Your Rate:</strong> ₹${data.submitted_rate}/box | <strong>Buyer Counter:</strong> ₹${data.buyer_counter}/box<br>
-          <strong>Utility Score:</strong> ${data.composite_score} / 100 | <strong>Decision:</strong> ${data.decision}
-        `;
-
-        // Automatically advance round for the next counter-bid
-        if (payload.round_number < 3) {
-          document.getElementById('portalRound').value = (payload.round_number + 1).toString();
-        }
-
-        loadDashboardData();
-        triggerInAppNotification(`Live mobile bid received for ${payload.rfq_id} from ${payload.supplier_id}!`);
-      } catch (err) {
-        alertBox.className = 'alert-box error';
-        alertBox.textContent = err.message;
-        alertBox.style.display = 'block';
-      }
-    });
-  }
-}
-
-function populatePortalSelects() {
-  const rfqSelect = document.getElementById('portalRfqSelect');
-  const supSelect = document.getElementById('portalSupplierSelect');
-  if (!rfqSelect || !supSelect) return;
-
-  if (cachedRfqs.length > 0) {
-    rfqSelect.innerHTML = cachedRfqs.map(r => `<option value="${r.id}">${r.id} - ${r.category} (${r.quantity} boxes)</option>`).join('');
-  } else {
-    rfqSelect.innerHTML = '<option value="">-- No RFQs created --</option>';
-  }
-
-  if (cachedSuppliers.length > 0) {
-    supSelect.innerHTML = cachedSuppliers.map(s => `<option value="${s.id}">${s.name} (${s.hub_location})</option>`).join('');
-  } else {
-    supSelect.innerHTML = '<option value="">-- No suppliers registered --</option>';
-  }
-
-  updatePortalRfqDetails();
-  rfqSelect.onchange = updatePortalRfqDetails;
-}
-
-function updatePortalRfqDetails() {
-  const rfqSelect = document.getElementById('portalRfqSelect');
-  if (!rfqSelect) return;
-  const selected = cachedRfqs.find(r => r.id === rfqSelect.value);
-  if (selected) {
-    const rate = Math.round(selected.budget_ceiling / selected.quantity);
-    document.getElementById('portalRfqTargetRate').textContent = `₹${rate} / Box`;
-    document.getElementById('portalRfqQty').textContent = `${selected.quantity} Units`;
   }
 }

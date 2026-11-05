@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Gateway | Shree Mahalaxmi Marbel and Granite</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 1.25rem;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-sizing: border-box;
+    }
+    .gateway-container {
+      width: 100%;
+      max-width: 920px;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 768px) {
+      .gateway-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .gateway-side {
+      padding: 2.5rem 2rem;
+    }
+    .owner-side {
+      border-right: 1px solid #e2e8f0;
+      background: #ffffff;
+    }
+    .supplier-side {
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .role-badge {
+      display: inline-block;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.04em;
+    }
+    .badge-owner { background: #fee2e2; color: #991b1b; }
+    .badge-supplier { background: #fef3c7; color: #92400e; }
+    .gateway-title { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem; }
+    .gateway-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.45; }
+    .form-group { margin-bottom: 1rem; text-align: left; }
+    .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
+    .form-control { width: 100%; box-sizing: border-box; padding: 0.7rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+    .form-control:focus { outline: none; border-color: #0f172a; box-shadow: 0 0 0 2px rgba(15,23,42,0.15); }
+    .btn-action { width: 100%; padding: 0.85rem; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.95rem; box-sizing: border-box; transition: background 0.2s; }
+    .btn-owner { background: #0f172a; color: #ffffff; }
+    .btn-owner:hover { background: #1e293b; }
+    .btn-supplier { background: #d97706; color: #ffffff; text-decoration: none; text-align: center; display: block; }
+    .btn-supplier:hover { background: #b45309; }
+    .footer-note { font-size: 0.78rem; color: #94a3b8; text-align: center; margin-top: 1.75rem; }
+    .demo-hint { font-size: 0.78rem; background: #f1f5f9; padding: 0.6rem 0.85rem; border-radius: 6px; border-left: 3px solid #0f172a; margin-top: 1.25rem; color: #475569; }
+  </style>
+</head>
+<body>
+
+  <div class="gateway-container">
+    <!-- LEFT: PROPRIETOR / BUYER AUTHENTICATION -->
+    <div class="gateway-side owner-side">
+      <span class="role-badge badge-owner">Authorized Personnel</span>
+      <h2 class="gateway-title">Proprietor Sign-In</h2>
+      <p class="gateway-desc">Access private procurement, autonomous multi-agent auctions, internal budget ceilings, and GST Purchase Order approvals.</p>
+
+      <div id="loginAlert" class="alert-box" style="display:none; margin-bottom: 1rem;"></div>
+
+      <form id="ownerLoginForm">
+        <div class="form-group">
+          <label for="ownerUsername">Admin Username</label>
+          <input type="text" id="ownerUsername" class="form-control" value="admin" required>
+        </div>
+        <div class="form-group">
+          <label for="ownerPassword">Password</label>
+          <input type="password" id="ownerPassword" class="form-control" value="mahalaxmi@123" required>
+        </div>
+        <button type="submit" class="btn-action btn-owner">Sign In to Dashboard →</button>
+      </form>
+
+      <div class="demo-hint">
+        <strong>Viva Credentials:</strong><br>
+        Username: <code>admin</code> | Password: <code>mahalaxmi@123</code>
+      </div>
+    </div>
+
+    <!-- RIGHT: SUPPLIER ACCESS (MOBILE / DESKTOP) -->
+    <div class="gateway-side supplier-side">
+      <div>
+        <span class="role-badge badge-supplier">Vendor & Supplier Portal</span>
+        <h2 class="gateway-title">Supplier Bidding Terminal</h2>
+        <p class="gateway-desc">Dedicated portal for regional tile manufacturers, marble quarries, and granite yard representatives (Mobile or Desktop).</p>
+
+        <ul style="font-size: 0.85rem; color: #475569; line-height: 1.65; padding-left: 1.2rem; margin-bottom: 1.5rem;">
+          <li>Self-register your company, depot, and factory hub</li>
+          <li>Review public consignment requirements</li>
+          <li>Submit live 3-round bids and counters directly</li>
+          <li><strong>Sealed-bid protection:</strong> Confidential competitor rates</li>
+        </ul>
+      </div>
+
+      <div>
+        <a href="/supplier.html" class="btn-action btn-supplier">📱 Enter Supplier Portal (Mobile / Desktop) →</a>
+        <div style="font-size: 0.75rem; color: #64748b; text-align: center; margin-top: 0.6rem;">
+          No password needed. Fully responsive on smartphone screens.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Shree Mahalaxmi Marbel and Granite — Mudhal Titta, Kolhapur | Academic Prototype (DYPCET Kolhapur)
+  </div>
+
+  <script>
+    document.getElementById('ownerLoginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const u = document.getElementById('ownerUsername').value.trim();
+      const p = document.getElementById('ownerPassword').value.trim();
+      const alertBox = document.getElementById('loginAlert');
+
+      if ((u === 'admin' && p === 'mahalaxmi@123') || (u === 'vikram' && p === 'kolhapur')) {
+        sessionStorage.setItem('negotiagent_auth', 'authenticated_owner');
+        window.location.href = '/index.html';
+      } else {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = 'Invalid credentials. Use admin / mahalaxmi@123 for demo.';
+        alertBox.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

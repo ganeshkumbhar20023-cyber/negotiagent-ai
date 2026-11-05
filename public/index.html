@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NegotiAgent AI - Procurement System | Shree Mahalaxmi Marbel and Granite</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script>
+    // Enforce Proprietor Authentication
+    if (sessionStorage.getItem('negotiagent_auth') !== 'authenticated_owner') {
+      window.location.replace('/login.html');
+    }
+  </script>
 </head>
 <body>
 
@@ -23,6 +29,9 @@
         🔔
         <span id="notifBadge" class="notif-badge">0</span>
       </button>
+
+      <!-- Owner Sign Out -->
+      <button id="btnSignOut" class="btn-secondary btn-sm" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; font-weight:700; margin-right: 0.5rem; cursor: pointer;">Sign Out</button>
 
       <!-- Language Selector -->
       <div class="lang-select-wrapper">
@@ -50,7 +59,7 @@
   <!-- Academic Disclaimer Banner -->
   <div class="academic-banner" role="region" aria-label="Simulation Notice">
     <span data-i18n="disclaimerBadge">Academic Prototype - Sponsored by Shree Mahalaxmi Marbel and Granite, Mudhal Titta (DYPCET Kolhapur)</span>
-    <span class="badge-demo">SIMULATED AGENT SYSTEM</span>
+    <span class="badge-demo">PROPRIETOR CONSOLE</span>
   </div>
 
   <!-- Primary Navigation -->
@@ -62,7 +71,7 @@
       <li><a href="#replay" id="navLinkReplay" class="nav-item" data-i18n="navReplay">Negotiation Replay</a></li>
       <li><a href="#approvals" id="navLinkApprovals" class="nav-item" data-i18n="navApprovals">Approvals & POs</a></li>
       <li><a href="#reports" id="navLinkReports" class="nav-item" data-i18n="navReports">Reports & Analytics</a></li>
-      <li><a href="/supplier.html" target="_blank" class="nav-item" style="color:#d97706; font-weight:700;">🔗 Vendor Portal (Sealed Bids)</a></li>
+      <li><a href="/supplier.html" target="_blank" class="nav-item" style="color:#d97706; font-weight:700;">🔗 Open Vendor Portal</a></li>
     </ul>
   </nav>
 
@@ -354,88 +363,6 @@
           <div id="supplierWinBars">
             <!-- Injected via JS -->
           </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- VIEW 7: SUPPLIER MOBILE BIDDING PORTAL -->
-    <div id="viewPortal" class="view-panel">
-      <section class="section-panel" style="max-width:600px; margin: 0 auto; border:2px solid #d97706;" aria-label="Mobile Supplier Portal">
-        <div class="panel-header" style="border-bottom: 2px solid #fef3c7; padding-bottom: 0.75rem;">
-          <div>
-            <span class="badge-demo" style="background:#d97706; color:white;">LIVE MOBILE CONSOLE</span>
-            <h2 class="panel-title" style="margin-top:0.4rem;" data-i18n="portalHeader">Supplier Live Negotiation Terminal</h2>
-            <p class="panel-subtitle" data-i18n="portalSub">Submit real-time bids directly to Shree Mahalaxmi Marbel and Granite</p>
-          </div>
-        </div>
-
-        <div id="portalAlert" class="alert-box" role="alert" style="display:none;"></div>
-
-        <form id="mobileBidForm" style="margin-top:1rem;">
-          <div class="form-group" style="margin-bottom:1rem;">
-            <label for="portalRfqSelect"><strong data-i18n="portalLblRfq">1. Select Active RFQ:</strong></label>
-            <select id="portalRfqSelect" class="form-control" required>
-              <!-- Populated via JS -->
-            </select>
-          </div>
-
-          <div class="form-group" style="margin-bottom:1rem;">
-            <label for="portalSupplierSelect"><strong data-i18n="portalLblSup">2. Your Supplier Identity:</strong></label>
-            <select id="portalSupplierSelect" class="form-control" required>
-              <!-- Populated via JS -->
-            </select>
-          </div>
-
-          <div style="background:#f8fafc; border-radius:6px; padding:0.75rem 1rem; margin-bottom:1rem; border:1px solid #e2e8f0;">
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:0.25rem;">
-              <span data-i18n="portalTargetCeiling">Target Budget Ceiling:</span>
-              <strong id="portalRfqTargetRate">₹-- / Box</strong>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
-              <span data-i18n="portalReqQty">Required Quantity:</span>
-              <strong id="portalRfqQty">-- Units</strong>
-            </div>
-          </div>
-
-          <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap:0.75rem;">
-            <div class="form-group">
-              <label for="portalRound" data-i18n="portalLblRound">Bidding Round</label>
-              <select id="portalRound" class="form-control">
-                <option value="1">Round 1 (Opening Quote)</option>
-                <option value="2">Round 2 (Concession Counter)</option>
-                <option value="3">Round 3 (Final Offer)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="portalRate" data-i18n="portalLblRate">Rate / Box (₹)</label>
-              <input type="number" id="portalRate" class="form-control" step="5" placeholder="e.g. 520" required>
-            </div>
-
-            <div class="form-group">
-              <label for="portalLeadDays" data-i18n="portalLblLead">Lead Days</label>
-              <input type="number" id="portalLeadDays" class="form-control" min="1" max="30" value="4" required>
-            </div>
-
-            <div class="form-group">
-              <label for="portalBreakage" data-i18n="portalLblBreakage">Breakage (%)</label>
-              <input type="number" id="portalBreakage" class="form-control" min="0.1" max="5.0" step="0.1" value="0.8" required>
-            </div>
-          </div>
-
-          <div class="form-group" style="margin-top:0.75rem;">
-            <label for="portalRemarks" data-i18n="portalLblRemarks">Message to Proprietor (Mr. Vikram Gurav)</label>
-            <input type="text" id="portalRemarks" class="form-control" placeholder="e.g. Expedited 3 days delivery available">
-          </div>
-
-          <button type="submit" id="btnSubmitMobileBid" class="btn-primary" style="width:100%; margin-top:1.25rem; background:#d97706; padding:0.85rem; font-size:1rem;" data-i18n="portalBtnSubmit">
-            🚀 Send Live Bid from Phone
-          </button>
-        </form>
-
-        <div id="portalLiveFeedback" style="display:none; margin-top:1.25rem; background:#ecfdf5; border:1px solid #10b981; border-radius:6px; padding:0.75rem;">
-          <div style="font-weight:700; color:#065f46; font-size:0.9rem;" data-i18n="portalFeedbackTitle">Buyer Agent Counter Received:</div>
-          <div id="portalFeedbackContent" style="font-size:0.85rem; margin-top:0.25rem; color:#047857;"></div>
         </div>
       </section>
     </div>

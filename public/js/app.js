@@ -1,7 +1,7 @@
 /**
  * NegotiAgent AI - Frontend Application Controller
  * Handles SPA navigation, API requests, dynamic supplier registration,
- * autonomous auctions, replay, approvals, and PO printing.
+ * autonomous auctions, replay, approvals, WhatsApp broadcasting, and PO printing.
  */
 
 let currentLang = localStorage.getItem('negotiagent_lang') || 'en';
@@ -173,7 +173,7 @@ function getStatusBadgeClass(status) {
   return 'badge-info';
 }
 
-// --- RFQ CREATION & WEIGHT VALIDATION ---
+// --- RFQ CREATION & WHATSAPP BROADCAST ---
 function setupRfqForm() {
   const form = document.getElementById('rfqForm');
   const alertBox = document.getElementById('rfqAlert');
@@ -246,16 +246,34 @@ function setupRfqForm() {
 
         const created = await res.json();
         alertBox.className = 'alert-box success';
-        alertBox.textContent = `RFQ ${created.id} created successfully! Initializing negotiation auction...`;
+        alertBox.textContent = `RFQ ${created.id} created successfully! Live notifications broadcast to supplier terminals.`;
         alertBox.style.display = 'block';
 
+        // Prepare Instant WhatsApp Alert for Morbi & Kolhapur supplier networks
+        const broadcastBox = document.getElementById('rfqBroadcastBox');
+        const btnWa = document.getElementById('btnBroadcastWhatsapp');
+        if (broadcastBox && btnWa) {
+          const publicPortalUrl = window.location.origin + '/login.html';
+          const msg = encodeURIComponent(
+            `*TENDER REQUIREMENT: Shree Mahalaxmi Marbel and Granite, Mudhal Titta*\n\n` +
+            `Material Demanded: *${payload.category} (${payload.size})*\n` +
+            `Quantity Required: *${payload.quantity} Boxes*\n` +
+            `Destination Godown: *Mudhal Titta Depot, Kolhapur Junction*\n` +
+            `Delivery Deadline: *${payload.delivery_deadline}*\n` +
+            `Quality Standard: *${payload.quality_grade}*\n\n` +
+            `Submit your sealed Round 1 bid online:\n${publicPortalUrl}`
+          );
+          btnWa.href = `https://api.whatsapp.com/send?text=${msg}`;
+          broadcastBox.style.display = 'block';
+        }
+
+        triggerInAppNotification(`New RFQ ${created.id} published. Supplier live broadcast active.`);
+
         setTimeout(() => {
-          form.reset();
           updateWeightSum();
-          alertBox.style.display = 'none';
           switchView('viewDashboard', document.getElementById('navLinkDashboard'));
           triggerNegotiation(created.id);
-        }, 1200);
+        }, 2200);
 
       } catch (err) {
         alertBox.className = 'alert-box error';

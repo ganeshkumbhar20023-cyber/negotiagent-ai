@@ -72,7 +72,6 @@
       grid-template-columns: 1fr 1.35fr;
       transition: all 0.25s ease-in-out;
     }
-    /* Responsive split for mobile vs desktop */
     @media (max-width: 900px) {
       .portal-wrapper {
         grid-template-columns: 1fr;
@@ -115,7 +114,81 @@
     .badge-buyer { background: #fee2e2; color: #991b1b; }
     .badge-seller { background: #fef3c7; color: #92400e; }
     .title-h2 { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem; }
-    .desc-p { font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.45; }
+    .desc-p { font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem; line-height: 1.45; }
+
+    /* ALERT BANNER */
+    .supplier-live-notice {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid #2563eb;
+      border-radius: 6px;
+      padding: 0.85rem;
+      margin-bottom: 1.25rem;
+      animation: pulseGlow 2.5s infinite;
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.25); }
+      70% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+    .notice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.35rem;
+    }
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #2563eb;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .notice-title {
+      font-weight: 700;
+      color: #1e40af;
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+    }
+    .notice-body {
+      font-size: 0.82rem;
+      color: #334155;
+      line-height: 1.45;
+    }
+    .btn-quick-bid {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      background: #2563eb;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-quick-bid:hover { background: #1d4ed8; }
+
+    .btn-notif-perm {
+      background: #dbeafe;
+      border: 1px dashed #2563eb;
+      color: #1e40af;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      width: 100%;
+      justify-content: center;
+    }
+
     .form-group { margin-bottom: 0.95rem; text-align: left; }
     .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
     .form-control { width: 100%; padding: 0.7rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.92rem; }
@@ -178,7 +251,7 @@
       </form>
     </div>
 
-    <!-- RIGHT: SUPPLIER PORTAL (DESKTOP & MOBILE COMPATIBLE) -->
+    <!-- RIGHT: SUPPLIER PORTAL (ACTIVE MATERIAL NOTIFICATION & AUDIO ALERTS) -->
     <div class="portal-section supplier-section">
       <span class="role-badge badge-seller">
         <span>🤝</span>
@@ -186,6 +259,27 @@
       </span>
       <h2 class="title-h2" data-i18n="supplierTitle">Supplier Registration & Bidding</h2>
       <p class="desc-p" data-i18n="supplierDesc">Vendor portal for regional suppliers and distributors. Register company or submit bids directly.</p>
+
+      <!-- DEVICE PUSH NOTIFICATION OPT-IN BUTTON -->
+      <button type="button" id="btnEnableNotifications" class="btn-notif-perm">
+        <span>🔔</span>
+        <span data-i18n="btnNotifEnable">Enable Real-Time Sound & Push Alerts for New Orders</span>
+      </button>
+
+      <!-- ACTIVE MATERIAL NOTIFICATION ALERT FOR SUPPLIERS -->
+      <div id="supplierRequirementNotice" class="supplier-live-notice" style="display:none;">
+        <div class="notice-header">
+          <span class="notice-title">
+            <span class="pulse-dot"></span>
+            <span data-i18n="noticeHead">📢 Consignment Requirement Open</span>
+          </span>
+          <span id="noticeBadgeTime" style="font-size:0.72rem; color:#64748b; font-weight:600;">ACTIVE TENDER</span>
+        </div>
+        <div class="notice-body" id="noticeTextDetails">
+          <!-- Populated live via /api/rfqs -->
+        </div>
+        <button type="button" class="btn-quick-bid" id="btnQuickBidAction" data-i18n="btnQuickBid">⚡ Bid on this Consignment</button>
+      </div>
 
       <div class="supplier-tabs">
         <button id="btnTabRegister" class="sub-tab active" type="button" data-i18n="tabReg">1. Register Company</button>
@@ -304,8 +398,9 @@
     let currentGatewayLang = localStorage.getItem('negotiagent_lang') || 'en';
     let globalRfqs = [];
     let globalSuppliers = [];
+    let lastKnownRfqId = null;
 
-    // --- TRILINGUAL DICTIONARY FOR LOGIN & SUPPLIER GATEWAY ---
+    // --- TRILINGUAL DICTIONARY ---
     const gatewayTranslations = {
       en: {
         deviceUniversal: "Desktop & Mobile Enabled",
@@ -320,6 +415,10 @@
         badgeSupplier: "Supplier Terminal (Desktop & Phone)",
         supplierTitle: "Supplier Registration & Bidding",
         supplierDesc: "Vendor portal for regional suppliers and distributors. Register company or submit bids directly.",
+        btnNotifEnable: "Enable Real-Time Sound & Push Alerts for New Orders",
+        btnNotifEnabled: "✅ Real-Time Sound & Push Alerts Active",
+        noticeHead: "📢 Consignment Requirement Open",
+        btnQuickBid: "⚡ Bid on this Consignment",
         tabReg: "1. Register Company",
         tabBid: "2. Live Bidding Room",
         lblSupId: "Supplier ID Code",
@@ -365,6 +464,10 @@
         badgeSupplier: "सप्लायर टर्मिनल (डेस्कटॉप व मोबाइल)",
         supplierTitle: "सप्लायर पंजीकरण एवं बोली",
         supplierDesc: "क्षेत्रीय सप्लायर्स और वितरकों के लिए पोर्टल। कंपनी पंजीकृत करें या सीधे लाइव बोली लगाएं।",
+        btnNotifEnable: "नए ऑर्डर हेतु साउंड व नोटिफिकेशन चालू करें",
+        btnNotifEnabled: "✅ रियल-टाइम अलर्ट सक्रिय हैं",
+        noticeHead: "📢 नया माल मांग पत्र (Tender) जारी",
+        btnQuickBid: "⚡ इस मांग पर अभी बोली लगाएं",
         tabReg: "1. कंपनी पंजीकृत करें",
         tabBid: "2. लाइव बिडिंग रूम",
         lblSupId: "सप्लायर आईडी कोड",
@@ -410,6 +513,10 @@
         badgeSupplier: "पुरवठादार टर्मिनल (मोबाईल व संगणक)",
         supplierTitle: "पुरवठादार नोंदणी आणि बोली",
         supplierDesc: "प्रादेशिक पुरवठादारांसाठी पोर्टल. स्वतःची कंपनी नोंदवा किंवा थेट मालकाला बोली पाठवा.",
+        btnNotifEnable: "नवीन मालाच्या मागणीसाठी ध्वनी व स्क्रीन अलर्ट सुरू करा",
+        btnNotifEnabled: "✅ स्क्रीन आणि आवाज अलर्ट सक्रिय आहेत",
+        noticeHead: "📢 नवीन माल खरेदी मागणी (Tender) उपलब्ध",
+        btnQuickBid: "⚡ या मागणीवर थेट बोली लावा",
         tabReg: "१. कंपनी नोंदणी करा",
         tabBid: "२. थेट बिडिंग रूम",
         lblSupId: "पुरवठादार कोड",
@@ -468,6 +575,58 @@
     });
     applyGatewayTranslations(currentGatewayLang);
 
+    // --- AUDIO TONE FOR SUPPLIER ALERT ---
+    function playAlertChime() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+      } catch (e) {
+        console.log("Audio alert blocked:", e);
+      }
+    }
+
+    // --- BROWSER SYSTEM NOTIFICATIONS ---
+    const btnEnableNotif = document.getElementById('btnEnableNotifications');
+    if ("Notification" in window) {
+      if (Notification.permission === "granted") {
+        btnEnableNotif.style.display = "none";
+      } else {
+        btnEnableNotif.addEventListener('click', () => {
+          Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+              btnEnableNotif.style.background = "#dcfce7";
+              btnEnableNotif.style.color = "#166534";
+              btnEnableNotif.style.borderColor = "#16a34a";
+              btnEnableNotif.textContent = gatewayTranslations[currentGatewayLang].btnNotifEnabled;
+              playAlertChime();
+            }
+          });
+        });
+      }
+    } else {
+      btnEnableNotif.style.display = "none";
+    }
+
+    function fireDeviceNotification(rfq) {
+      playAlertChime();
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("🚨 New Consignment Demand Alert!", {
+          body: `${rfq.category} (${rfq.quantity} Boxes required at Mudhal Titta). Tap to submit your quote.`,
+          icon: "/public/favicon.ico"
+        });
+      }
+    }
+
     // --- OWNER SIGN-IN ---
     document.getElementById('ownerLoginForm').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -509,6 +668,10 @@
     });
 
     document.getElementById('regId').value = 'SUP-VENDOR-' + Math.floor(100 + Math.random() * 900);
+
+    document.getElementById('btnQuickBidAction').addEventListener('click', () => {
+      btnTabNegotiate.click();
+    });
 
     // --- SUPPLIER QUICK REGISTRATION ---
     document.getElementById('supplierQuickRegForm').addEventListener('submit', async (e) => {
@@ -556,13 +719,35 @@
       }
     });
 
-    // --- LOAD BIDDING ROOM DATA ---
+    // --- FETCH RFQS & TRIGGER NOTIFICATIONS ---
     async function loadBiddingRoomData() {
       try {
         const dict = gatewayTranslations[currentGatewayLang] || gatewayTranslations['en'];
         const [rRes, sRes] = await Promise.all([fetch('/api/rfqs'), fetch('/api/suppliers')]);
         if (rRes.ok) globalRfqs = await rRes.json();
         if (sRes.ok) globalSuppliers = await sRes.json();
+
+        const noticeBox = document.getElementById('supplierRequirementNotice');
+        const noticeText = document.getElementById('noticeTextDetails');
+
+        if (globalRfqs && globalRfqs.length > 0) {
+          const latestRfq = globalRfqs[0];
+
+          // Check if a brand-new RFQ arrived since last check
+          if (lastKnownRfqId !== null && lastKnownRfqId !== latestRfq.id) {
+            fireDeviceNotification(latestRfq);
+          }
+          lastKnownRfqId = latestRfq.id;
+
+          noticeBox.style.display = 'block';
+          noticeText.innerHTML = `
+            <strong>${latestRfq.category} (${latestRfq.size})</strong><br>
+            Quantity Required: <strong>${latestRfq.quantity} Boxes</strong> | Destination: <strong>Mudhal Titta Depot</strong><br>
+            <span style="font-size:0.75rem; color:#64748b;">Quality standard: ${latestRfq.quality_grade || 'Premium Grade'} | Delivery deadline: ${latestRfq.delivery_deadline || 'Urgent'}</span>
+          `;
+        } else {
+          noticeBox.style.display = 'none';
+        }
 
         const rfqSelect = document.getElementById('bidRfqSelect');
         const supSelect = document.getElementById('bidSupplierSelect');
@@ -591,7 +776,7 @@
       }
     }
 
-    // --- SUBMIT LIVE BID ---
+    // --- SUBMIT LIVE SEALED BID ---
     document.getElementById('supplierLiveBidForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('bidAlert');
@@ -636,6 +821,9 @@
         alertBox.style.display = 'block';
       }
     });
+
+    loadBiddingRoomData();
+    setInterval(loadBiddingRoomData, 4000);
   </script>
 </body>
 </html>

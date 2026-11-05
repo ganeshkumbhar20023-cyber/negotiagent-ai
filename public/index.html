@@ -6,8 +6,10 @@
   <title>NegotiAgent AI - Procurement System | Shree Mahalaxmi Marbel and Granite</title>
   <link rel="stylesheet" href="/css/style.css">
   <script>
-    // Enforce Proprietor Authentication
-    if (sessionStorage.getItem('negotiagent_auth') !== 'authenticated_owner') {
+    // Strict authentication gate
+    const authSession = sessionStorage.getItem('negotiagent_auth');
+    const authLocal = localStorage.getItem('negotiagent_auth');
+    if (authSession !== 'authenticated_owner' && authLocal !== 'authenticated_owner') {
       window.location.replace('/login.html');
     }
   </script>
@@ -31,7 +33,7 @@
       </button>
 
       <!-- Owner Sign Out -->
-      <button id="btnSignOut" class="btn-secondary btn-sm" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; font-weight:700; margin-right: 0.5rem; cursor: pointer;">Sign Out</button>
+      <button id="btnSignOut" onclick="handleSignOut()" class="btn-secondary btn-sm" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; font-weight:700; margin-right: 0.5rem; cursor: pointer;">Sign Out</button>
 
       <!-- Language Selector -->
       <div class="lang-select-wrapper">
@@ -477,6 +479,17 @@
   <footer class="site-footer">
     <p data-i18n="footerText">NegotiAgent AI - Final Year Academic Project developed for Shree Mahalaxmi Marbel and Granite by DYPCET Kolhapur students (Rushikesh Powar, Rohit Mengane, Ganesh Kumbhar, Pawan Payghan).</p>
   </footer>
+
+  <!-- Direct Sign-Out Fallback Handler -->
+  <script>
+    function handleSignOut() {
+      sessionStorage.clear();
+      localStorage.clear();
+      sessionStorage.removeItem('negotiagent_auth');
+      localStorage.removeItem('negotiagent_auth');
+      window.location.replace('/login.html');
+    }
+  </script>
 
   <!-- Scripts -->
   <script src="/js/translations.js"></script>

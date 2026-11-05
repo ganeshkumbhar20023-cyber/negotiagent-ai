@@ -77,34 +77,33 @@
 
   <div class="portal-wrapper">
 
-    <!-- LEFT: OWNER / BUYER SIGN-IN (CREDENTIALS HIDDEN) -->
+    <!-- LEFT: OWNER / BUYER SIGN-IN -->
     <div class="portal-section owner-section">
       <span class="role-badge badge-buyer">Proprietor Access</span>
       <h2 class="title-h2">Buyer Sign-In</h2>
-      <p class="desc-p">Secure commercial dashboard for Mr. Vikram Gurav. Access budget ceilings, autonomous agent auctions, full audit logs, and GST invoices.</p>
+      <p class="desc-p">Internal management portal. Authorized commercial login only.</p>
 
       <div id="loginAlert" class="alert-box" style="display:none; margin-bottom: 1rem;"></div>
 
-      <form id="ownerLoginForm">
+      <form id="ownerLoginForm" autocomplete="off">
         <div class="form-group">
-          <label for="ownerUsername">Proprietor Username</label>
-          <input type="text" id="ownerUsername" class="form-control" placeholder="Enter username" autocomplete="username" required>
+          <label for="ownerUsername">Username</label>
+          <input type="text" id="ownerUsername" class="form-control" placeholder="" autocomplete="off" required>
         </div>
         <div class="form-group">
           <label for="ownerPassword">Password</label>
-          <input type="password" id="ownerPassword" class="form-control" placeholder="Enter password" autocomplete="current-password" required>
+          <input type="password" id="ownerPassword" class="form-control" placeholder="" autocomplete="new-password" required>
         </div>
-        <button type="submit" class="btn-submit btn-owner">Sign In to Dashboard →</button>
+        <button type="submit" class="btn-submit btn-owner">Sign In →</button>
       </form>
     </div>
 
-    <!-- RIGHT: SUPPLIER PORTAL (REGISTER & NEGOTIATE ON SAME PAGE) -->
+    <!-- RIGHT: SUPPLIER PORTAL (REGISTER & NEGOTIATE) -->
     <div class="portal-section supplier-section">
       <span class="role-badge badge-seller">Supplier Terminal</span>
       <h2 class="title-h2">Supplier Registration & Bidding</h2>
-      <p class="desc-p">Regional supplier portal for mobile or desktop. Register your company or submit live bids directly to the buyer.</p>
+      <p class="desc-p">Vendor portal for regional suppliers and distributors. Register company or submit bids directly.</p>
 
-      <!-- Sub-Tabs for Supplier: Register vs. Live Bidding -->
       <div class="supplier-tabs">
         <button id="btnTabRegister" class="sub-tab active" type="button">1. Register Company</button>
         <button id="btnTabNegotiate" class="sub-tab" type="button">2. Live Bidding Room</button>
@@ -113,7 +112,7 @@
       <!-- VIEW A: SUPPLIER REGISTRATION FORM -->
       <div id="paneSupplierRegister">
         <div id="regAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
-        <form id="supplierQuickRegForm">
+        <form id="supplierQuickRegForm" autocomplete="off">
           <div class="form-group">
             <label for="regId">Supplier ID Code</label>
             <input type="text" id="regId" class="form-control" value="SUP-KOLH-01" required>
@@ -151,13 +150,12 @@
       <!-- VIEW B: LIVE NEGOTIATION FORM -->
       <div id="paneSupplierNegotiate" style="display:none;">
         <div id="bidAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
-        <form id="supplierLiveBidForm">
+        <form id="supplierLiveBidForm" autocomplete="off">
           <div class="form-group">
             <label for="bidRfqSelect">Active Consignment Tender:</label>
             <select id="bidRfqSelect" class="form-control" required></select>
           </div>
 
-          <!-- Public Details: Supplier never sees the buyer's private budget ceiling -->
           <div class="info-card">
             <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
               <span style="color:#64748b;">Consignment Material:</span>
@@ -230,9 +228,9 @@
       const p = document.getElementById('ownerPassword').value.trim();
       const alertBox = document.getElementById('loginAlert');
 
-      // Credentials known only by the owner
       if ((u === 'admin' && p === 'mahalaxmi@123') || (u === 'vikram' && p === 'kolhapur')) {
         sessionStorage.setItem('negotiagent_auth', 'authenticated_owner');
+        localStorage.setItem('negotiagent_auth', 'authenticated_owner');
         window.location.href = '/index.html';
       } else {
         alertBox.className = 'alert-box error';
@@ -241,7 +239,7 @@
       }
     });
 
-    // --- SUPPLIER TAB TOGGLING ON THE SAME PAGE ---
+    // --- SUPPLIER TAB TOGGLING ---
     const btnTabRegister = document.getElementById('btnTabRegister');
     const btnTabNegotiate = document.getElementById('btnTabNegotiate');
     const paneSupplierRegister = document.getElementById('paneSupplierRegister');
@@ -262,10 +260,9 @@
       loadBiddingRoomData();
     });
 
-    // Suggest a random unique ID for the supplier
     document.getElementById('regId').value = 'SUP-VENDOR-' + Math.floor(100 + Math.random() * 900);
 
-    // --- SUPPLIER QUICK REGISTRATION ---
+    // --- SUPPLIER REGISTRATION ---
     document.getElementById('supplierQuickRegForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('regAlert');
@@ -310,7 +307,7 @@
       }
     });
 
-    // --- LOAD RFQS & REGISTERED SUPPLIERS INTO LIVE BIDDING ROOM ---
+    // --- LOAD RFQS & SUPPLIERS ---
     async function loadBiddingRoomData() {
       try {
         const [rRes, sRes] = await Promise.all([fetch('/api/rfqs'), fetch('/api/suppliers')]);
@@ -344,7 +341,7 @@
       }
     }
 
-    // --- SUBMIT LIVE SEALED BID ---
+    // --- SUBMIT LIVE BID ---
     document.getElementById('supplierLiveBidForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('bidAlert');
@@ -380,7 +377,6 @@
           <strong>Status:</strong> ${data.decision}
         `;
 
-        // Automatically advance round for the supplier
         if (payload.round_number < 3) {
           document.getElementById('bidRound').value = (payload.round_number + 1).toString();
         }

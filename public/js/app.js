@@ -33,12 +33,25 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupSignOut() {
   const btnSignOut = document.getElementById('btnSignOut');
   if (btnSignOut) {
-    btnSignOut.addEventListener('click', () => {
+    btnSignOut.onclick = function(e) {
+      if (e) e.preventDefault();
+      sessionStorage.clear();
+      localStorage.clear();
       sessionStorage.removeItem('negotiagent_auth');
-      window.location.href = '/login.html';
-    });
+      localStorage.removeItem('negotiagent_auth');
+      window.location.replace('/login.html');
+    };
   }
 }
+
+// Global fallback callable from anywhere
+window.handleSignOut = function() {
+  sessionStorage.clear();
+  localStorage.clear();
+  sessionStorage.removeItem('negotiagent_auth');
+  localStorage.removeItem('negotiagent_auth');
+  window.location.replace('/login.html');
+};
 
 // --- TRANSLATIONS & LOCALIZATION ---
 function initTranslations() {

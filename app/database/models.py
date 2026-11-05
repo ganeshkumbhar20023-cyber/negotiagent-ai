@@ -39,6 +39,7 @@ class Supplier(Base):
 
     id = Column(String(50), primary_key=True, index=True)
     name = Column(String(150), nullable=False)
+    contact_number = Column(String(50), nullable=True)  # <-- ADD HERE
     hub_location = Column(String(150), nullable=False)
     base_price_per_box = Column(Float, nullable=False)
     min_walkaway_price = Column(Float, nullable=False)

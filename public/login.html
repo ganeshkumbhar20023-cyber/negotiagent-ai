@@ -116,7 +116,7 @@
     .title-h2 { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem; }
     .desc-p { font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem; line-height: 1.45; }
 
-    /* ALERT BANNER */
+    /* FLIPKART STYLE PUSH BANNER */
     .supplier-live-notice {
       background: #eff6ff;
       border: 1px solid #bfdbfe;
@@ -176,17 +176,18 @@
       background: #dbeafe;
       border: 1px dashed #2563eb;
       color: #1e40af;
-      padding: 0.4rem 0.75rem;
-      font-size: 0.75rem;
-      font-weight: 600;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 700;
       border-radius: 6px;
       cursor: pointer;
       margin-bottom: 0.9rem;
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.45rem;
       width: 100%;
       justify-content: center;
+      transition: background 0.2s;
     }
 
     .form-group { margin-bottom: 0.95rem; text-align: left; }
@@ -260,10 +261,10 @@
       <h2 class="title-h2" data-i18n="supplierTitle">Supplier Registration & Bidding</h2>
       <p class="desc-p" data-i18n="supplierDesc">Vendor portal for regional suppliers and distributors. Register company or submit bids directly.</p>
 
-      <!-- DEVICE PUSH NOTIFICATION OPT-IN BUTTON -->
+      <!-- FLIPKART STYLE PUSH NOTIFICATION OPT-IN BUTTON -->
       <button type="button" id="btnEnableNotifications" class="btn-notif-perm">
-        <span>🔔</span>
-        <span data-i18n="btnNotifEnable">Enable Real-Time Sound & Push Alerts for New Orders</span>
+        <span>📲</span>
+        <span data-i18n="btnNotifEnable">Allow Lock-Screen Alerts (Get Flipkart-style Push on New Orders)</span>
       </button>
 
       <!-- ACTIVE MATERIAL NOTIFICATION ALERT FOR SUPPLIERS -->
@@ -286,7 +287,7 @@
         <button id="btnTabNegotiate" class="sub-tab" type="button" data-i18n="tabBid">2. Live Bidding Room</button>
       </div>
 
-      <!-- VIEW A: SUPPLIER REGISTRATION FORM -->
+      <!-- VIEW A: SUPPLIER REGISTRATION FORM (WITH CONTACT NUMBER) -->
       <div id="paneSupplierRegister">
         <div id="regAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
         <form id="supplierQuickRegForm" autocomplete="off">
@@ -297,6 +298,10 @@
           <div class="form-group">
             <label for="regName" data-i18n="lblSupName">Company / Depot Name</label>
             <input type="text" id="regName" class="form-control" data-i18n-placeholder="phSupName" placeholder="e.g. Kolhapur Regional Tiles Mart" required>
+          </div>
+          <div class="form-group">
+            <label for="regPhone" data-i18n="lblSupPhone">Supplier Contact / WhatsApp Number</label>
+            <input type="tel" id="regPhone" class="form-control" placeholder="+91 98765 43210" pattern="[+0-9\s-]{10,15}" required>
           </div>
           <div class="form-group">
             <label for="regHub" data-i18n="lblSupHub">Depot / Manufacturing Hub</label>
@@ -400,6 +405,15 @@
     let globalSuppliers = [];
     let lastKnownRfqId = null;
 
+    // --- REGISTER SERVICE WORKER FOR LOCK-SCREEN PUSH NOTIFICATIONS ---
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        console.log('Push Service Worker Registered:', reg.scope);
+      }).catch((err) => {
+        console.log('SW Registration bypassed:', err);
+      });
+    }
+
     // --- TRILINGUAL DICTIONARY ---
     const gatewayTranslations = {
       en: {
@@ -415,14 +429,15 @@
         badgeSupplier: "Supplier Terminal (Desktop & Phone)",
         supplierTitle: "Supplier Registration & Bidding",
         supplierDesc: "Vendor portal for regional suppliers and distributors. Register company or submit bids directly.",
-        btnNotifEnable: "Enable Real-Time Sound & Push Alerts for New Orders",
-        btnNotifEnabled: "✅ Real-Time Sound & Push Alerts Active",
+        btnNotifEnable: "Allow Lock-Screen Alerts (Get Flipkart-style Push on New Orders)",
+        btnNotifEnabled: "✅ Push Notifications Active on Lock Screen",
         noticeHead: "📢 Consignment Requirement Open",
         btnQuickBid: "⚡ Bid on this Consignment",
         tabReg: "1. Register Company",
         tabBid: "2. Live Bidding Room",
         lblSupId: "Supplier ID Code",
         lblSupName: "Company / Depot Name",
+        lblSupPhone: "Supplier Contact / WhatsApp Number",
         phSupName: "e.g. Kolhapur Regional Tiles Mart",
         lblSupHub: "Depot / Manufacturing Hub",
         phSupHub: "e.g. MIDC Shiroli, Kolhapur",
@@ -464,14 +479,15 @@
         badgeSupplier: "सप्लायर टर्मिनल (डेस्कटॉप व मोबाइल)",
         supplierTitle: "सप्लायर पंजीकरण एवं बोली",
         supplierDesc: "क्षेत्रीय सप्लायर्स और वितरकों के लिए पोर्टल। कंपनी पंजीकृत करें या सीधे लाइव बोली लगाएं।",
-        btnNotifEnable: "नए ऑर्डर हेतु साउंड व नोटिफिकेशन चालू करें",
-        btnNotifEnabled: "✅ रियल-टाइम अलर्ट सक्रिय हैं",
+        btnNotifEnable: "मोबाइल अलर्ट चालू करें (फ्लिपकार्ट जैसे सीधे नोटिफिकेशन पाएं)",
+        btnNotifEnabled: "✅ मोबाइल लॉक-स्क्रीन अलर्ट सक्रिय हैं",
         noticeHead: "📢 नया माल मांग पत्र (Tender) जारी",
         btnQuickBid: "⚡ इस मांग पर अभी बोली लगाएं",
         tabReg: "1. कंपनी पंजीकृत करें",
         tabBid: "2. लाइव बिडिंग रूम",
         lblSupId: "सप्लायर आईडी कोड",
         lblSupName: "कंपनी / डिपो का नाम",
+        lblSupPhone: "सप्लायर मोबाइल / व्हाट्सएप नंबर",
         phSupName: "उदा. कोल्हापुर टाइल्स मार्ट",
         lblSupHub: "डिपो / निर्माण केंद्र",
         phSupHub: "उदा. शिरोली एमआईडीसी, कोल्हापुर",
@@ -513,14 +529,15 @@
         badgeSupplier: "पुरवठादार टर्मिनल (मोबाईल व संगणक)",
         supplierTitle: "पुरवठादार नोंदणी आणि बोली",
         supplierDesc: "प्रादेशिक पुरवठादारांसाठी पोर्टल. स्वतःची कंपनी नोंदवा किंवा थेट मालकाला बोली पाठवा.",
-        btnNotifEnable: "नवीन मालाच्या मागणीसाठी ध्वनी व स्क्रीन अलर्ट सुरू करा",
-        btnNotifEnabled: "✅ स्क्रीन आणि आवाज अलर्ट सक्रिय आहेत",
+        btnNotifEnable: "मोबाईल स्क्रीन अलर्ट चालू करा (फ्लिपकार्टसारखे थेट मेसेज मिळवा)",
+        btnNotifEnabled: "✅ लॉक-स्क्रीनवर थेट नोटिफिकेशन सक्रिय झाले",
         noticeHead: "📢 नवीन माल खरेदी मागणी (Tender) उपलब्ध",
         btnQuickBid: "⚡ या मागणीवर थेट बोली लावा",
         tabReg: "१. कंपनी नोंदणी करा",
         tabBid: "२. थेट बिडिंग रूम",
         lblSupId: "पुरवठादार कोड",
         lblSupName: "कंपनी / डेपोचे नाव",
+        lblSupPhone: "पुरवठादार मोबाईल / व्हॉट्सॲप नंबर",
         phSupName: "उदा. कोल्हापूर टाईल्स मार्ट",
         lblSupHub: "डेपो / फॅक्टरी पत्ता",
         phSupHub: "उदा. शिरोली एमआयडीसी, कोल्हापूर",
@@ -575,7 +592,7 @@
     });
     applyGatewayTranslations(currentGatewayLang);
 
-    // --- AUDIO TONE FOR SUPPLIER ALERT ---
+    // --- AUDIO CHIME ---
     function playAlertChime() {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -584,8 +601,8 @@
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.type = "sine";
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
         gain.gain.setValueAtTime(0.2, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
         osc.start(ctx.currentTime);
@@ -595,11 +612,14 @@
       }
     }
 
-    // --- BROWSER SYSTEM NOTIFICATIONS ---
+    // --- BROWSER PUSH NOTIFICATION PERMISSION ---
     const btnEnableNotif = document.getElementById('btnEnableNotifications');
     if ("Notification" in window) {
       if (Notification.permission === "granted") {
-        btnEnableNotif.style.display = "none";
+        btnEnableNotif.style.background = "#dcfce7";
+        btnEnableNotif.style.color = "#166534";
+        btnEnableNotif.style.borderColor = "#16a34a";
+        btnEnableNotif.textContent = gatewayTranslations[currentGatewayLang].btnNotifEnabled;
       } else {
         btnEnableNotif.addEventListener('click', () => {
           Notification.requestPermission().then(permission => {
@@ -609,6 +629,16 @@
               btnEnableNotif.style.borderColor = "#16a34a";
               btnEnableNotif.textContent = gatewayTranslations[currentGatewayLang].btnNotifEnabled;
               playAlertChime();
+              // Trigger test Flipkart-style greeting notification
+              if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(reg => {
+                  reg.showNotification("Shree Mahalaxmi Marbel & Granite", {
+                    body: "Notifications enabled! You will receive instant alerts for new tile & granite tenders.",
+                    icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                    vibrate: [200, 100, 200]
+                  });
+                });
+              }
             }
           });
         });
@@ -617,13 +647,24 @@
       btnEnableNotif.style.display = "none";
     }
 
+    // Deliver lock-screen notification via registered Service Worker
     function fireDeviceNotification(rfq) {
       playAlertChime();
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("🚨 New Consignment Demand Alert!", {
-          body: `${rfq.category} (${rfq.quantity} Boxes required at Mudhal Titta). Tap to submit your quote.`,
-          icon: "/public/favicon.ico"
+      const title = `🚨 New Demand: ${rfq.category}`;
+      const options = {
+        body: `${rfq.quantity} Boxes required at Mudhal Titta Depot. Tap to submit your sealed bid!`,
+        icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+        badge: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+        vibrate: [200, 100, 200],
+        data: { url: '/login.html' }
+      };
+
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, options);
         });
+      } else if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, options);
       }
     }
 
@@ -673,7 +714,7 @@
       btnTabNegotiate.click();
     });
 
-    // --- SUPPLIER QUICK REGISTRATION ---
+    // --- SUPPLIER REGISTRATION WITH PHONE NUMBER ---
     document.getElementById('supplierQuickRegForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('regAlert');
@@ -683,6 +724,7 @@
       const payload = {
         id: document.getElementById('regId').value.trim(),
         name: document.getElementById('regName').value.trim(),
+        contact_number: document.getElementById('regPhone').value.trim(),
         hub_location: document.getElementById('regHub').value.trim(),
         agent_strategy: 'balanced',
         base_price_per_box: parseFloat(document.getElementById('regBase').value),
@@ -733,7 +775,7 @@
         if (globalRfqs && globalRfqs.length > 0) {
           const latestRfq = globalRfqs[0];
 
-          // Check if a brand-new RFQ arrived since last check
+          // Trigger lock-screen push notification when a new RFQ is detected
           if (lastKnownRfqId !== null && lastKnownRfqId !== latestRfq.id) {
             fireDeviceNotification(latestRfq);
           }

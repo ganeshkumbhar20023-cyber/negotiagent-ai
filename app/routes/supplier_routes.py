@@ -14,8 +14,11 @@ from app.database.models import Supplier
 
 router = APIRouter(prefix="/api/suppliers", tags=["Suppliers"])
 
+from typing import Optional
+
 class SupplierCreateRequest(BaseModel):
     name: str = Field(..., min_length=3)
+    contact_number: Optional[str] = Field(default=None)  # <-- ADD HERE
     hub_location: str = Field(..., min_length=3)
     base_price_per_box: float = Field(..., gt=0)
     min_walkaway_price: float = Field(..., gt=0)
@@ -24,7 +27,7 @@ class SupplierCreateRequest(BaseModel):
     offered_breakage_pct: float = Field(..., ge=0, le=10)
     quality_score: float = Field(..., ge=0, le=100)
     reliability_score: float = Field(..., ge=0, le=100)
-    agent_strategy: str = Field(default="balanced") # aggressive, cooperative, balanced
+    agent_strategy: str = Field(default="balanced")
 
 class SupplierResponse(BaseModel):
     id: str
@@ -47,14 +50,29 @@ def get_all_suppliers(db: Session = Depends(get_db)):
     """Retrieve all simulated supplier agent profiles."""
     return db.query(Supplier).all()
 
-@router.post("", response_model=SupplierResponse)
+@router.post("/", response_model=SupplierResponse)
 def create_supplier(payload: SupplierCreateRequest, db: Session = Depends(get_db)):
-    """Register or configure a new simulated tile supplier agent."""
-    if payload.min_walkaway_price >= payload.base_price_per_box:
-        raise HTTPException(
-            status_code=400,
-            detail="Minimum walk-away price must be strictly lower than base price."
-        )
+    # ... validation or ID generation logic ...
+
+    new_supplier = Supplier(
+        id=supplier_id,
+        name=payload.name,
+        contact_number=payload.contact_number,  # <-- ADD HERE
+        hub_location=payload.hub_location,
+        base_price_per_box=payload.base_price_per_box,
+        min_walkaway_price=payload.min_walkaway_price,
+        standard_lead_days=payload.standard_lead_days,
+        min_lead_days=payload.min_lead_days,
+        offered_breakage_pct=payload.offered_breakage_pct,
+        quality_score=payload.quality_score,
+        reliability_score=payload.reliability_score,
+        agent_strategy=payload.agent_strategy
+    )
+
+    db.add(new_supplier)
+    db.commit()
+    db.refresh(new_supplier)
+    return new_supplier
 
     if payload.min_lead_days > payload.standard_lead_days:
         raise HTTPException(

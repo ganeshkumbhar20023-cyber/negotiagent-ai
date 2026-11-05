@@ -18,6 +18,30 @@
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
+    .top-lang-bar {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      gap: 0.5rem;
+    }
+    .top-lang-bar label {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .lang-picker {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      outline: none;
+    }
     .portal-wrapper {
       width: 100%;
       max-width: 1100px;
@@ -75,38 +99,48 @@
 </head>
 <body>
 
+  <!-- LANGUAGE SELECTOR BAR -->
+  <div class="top-lang-bar">
+    <label for="loginLangSelector" data-i18n="langLabel">🌐 Language / भाषा / भाषा:</label>
+    <select id="loginLangSelector" class="lang-picker" aria-label="Select Gateway Language">
+      <option value="en">English (EN)</option>
+      <option value="hi">हिंदी (HI)</option>
+      <option value="mr">मराठी (MR)</option>
+    </select>
+  </div>
+
   <div class="portal-wrapper">
 
     <!-- LEFT: OWNER / BUYER SIGN-IN -->
     <div class="portal-section owner-section">
-      <span class="role-badge badge-buyer">Proprietor Access</span>
-      <h2 class="title-h2">Buyer Sign-In</h2>
-      <p class="desc-p">Internal management portal. Authorized commercial login only.</p>
+      <span class="role-badge badge-buyer" data-i18n="badgeOwner">Proprietor Access</span>
+      <h2 class="title-h2" data-i18n="ownerTitle">Buyer Sign-In</h2>
+      <p class="desc-p" data-i18n="ownerDesc">Internal management portal. Authorized commercial login only.</p>
 
       <div id="loginAlert" class="alert-box" style="display:none; margin-bottom: 1rem;"></div>
 
       <form id="ownerLoginForm" autocomplete="off">
         <div class="form-group">
-          <label for="ownerUsername">Username</label>
-          <input type="text" id="ownerUsername" class="form-control" placeholder="" autocomplete="off" required>
+          <label for="ownerUsername" data-i18n="lblUsername">Username</label>
+          <input type="text" id="ownerUsername" class="form-control" autocomplete="off" required>
         </div>
         <div class="form-group">
-          <label for="ownerPassword">Password</label>
-          <input type="password" id="ownerPassword" class="form-control" placeholder="" autocomplete="new-password" required>
+          <label for="ownerPassword" data-i18n="lblPassword">Password</label>
+          <input type="password" id="ownerPassword" class="form-control" autocomplete="new-password" required>
         </div>
-        <button type="submit" class="btn-submit btn-owner">Sign In →</button>
+        <button type="submit" class="btn-submit btn-owner" data-i18n="btnOwnerSignIn">Sign In →</button>
       </form>
     </div>
 
     <!-- RIGHT: SUPPLIER PORTAL (REGISTER & NEGOTIATE) -->
     <div class="portal-section supplier-section">
-      <span class="role-badge badge-seller">Supplier Terminal</span>
-      <h2 class="title-h2">Supplier Registration & Bidding</h2>
-      <p class="desc-p">Vendor portal for regional suppliers and distributors. Register company or submit bids directly.</p>
+      <span class="role-badge badge-seller" data-i18n="badgeSupplier">Supplier Terminal</span>
+      <h2 class="title-h2" data-i18n="supplierTitle">Supplier Registration & Bidding</h2>
+      <p class="desc-p" data-i18n="supplierDesc">Vendor portal for regional suppliers and distributors. Register company or submit bids directly.</p>
 
       <div class="supplier-tabs">
-        <button id="btnTabRegister" class="sub-tab active" type="button">1. Register Company</button>
-        <button id="btnTabNegotiate" class="sub-tab" type="button">2. Live Bidding Room</button>
+        <button id="btnTabRegister" class="sub-tab active" type="button" data-i18n="tabReg">1. Register Company</button>
+        <button id="btnTabNegotiate" class="sub-tab" type="button" data-i18n="tabBid">2. Live Bidding Room</button>
       </div>
 
       <!-- VIEW A: SUPPLIER REGISTRATION FORM -->
@@ -114,36 +148,36 @@
         <div id="regAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
         <form id="supplierQuickRegForm" autocomplete="off">
           <div class="form-group">
-            <label for="regId">Supplier ID Code</label>
+            <label for="regId" data-i18n="lblSupId">Supplier ID Code</label>
             <input type="text" id="regId" class="form-control" value="SUP-KOLH-01" required>
           </div>
           <div class="form-group">
-            <label for="regName">Company / Depot Name</label>
-            <input type="text" id="regName" class="form-control" placeholder="e.g. Kolhapur Regional Tiles Mart" required>
+            <label for="regName" data-i18n="lblSupName">Company / Depot Name</label>
+            <input type="text" id="regName" class="form-control" data-i18n-placeholder="phSupName" placeholder="e.g. Kolhapur Regional Tiles Mart" required>
           </div>
           <div class="form-group">
-            <label for="regHub">Depot / Manufacturing Hub</label>
-            <input type="text" id="regHub" class="form-control" placeholder="e.g. MIDC Shiroli, Kolhapur" required>
+            <label for="regHub" data-i18n="lblSupHub">Depot / Manufacturing Hub</label>
+            <input type="text" id="regHub" class="form-control" data-i18n-placeholder="phSupHub" placeholder="e.g. MIDC Shiroli, Kolhapur" required>
           </div>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.65rem;">
             <div class="form-group">
-              <label for="regBase">List Quote (₹ / Box)</label>
+              <label for="regBase" data-i18n="lblSupBase">List Quote (₹ / Box)</label>
               <input type="number" id="regBase" class="form-control" value="540" required>
             </div>
             <div class="form-group">
-              <label for="regWalkaway">Bottom Margin (₹ / Box)</label>
+              <label for="regWalkaway" data-i18n="lblSupWalkaway">Bottom Margin (₹ / Box)</label>
               <input type="number" id="regWalkaway" class="form-control" value="480" required>
             </div>
             <div class="form-group">
-              <label for="regLead">Standard Lead (Days)</label>
+              <label for="regLead" data-i18n="lblSupLead">Standard Lead (Days)</label>
               <input type="number" id="regLead" class="form-control" value="4" required>
             </div>
             <div class="form-group">
-              <label for="regBreakage">Breakage Guarantee (%)</label>
+              <label for="regBreakage" data-i18n="lblSupBreakage">Breakage Guarantee (%)</label>
               <input type="number" id="regBreakage" class="form-control" step="0.1" value="0.8" required>
             </div>
           </div>
-          <button type="submit" class="btn-submit btn-vendor">Register Company & Proceed to Bidding →</button>
+          <button type="submit" class="btn-submit btn-vendor" data-i18n="btnRegisterSup">Register Company & Proceed to Bidding →</button>
         </form>
       </div>
 
@@ -152,59 +186,59 @@
         <div id="bidAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
         <form id="supplierLiveBidForm" autocomplete="off">
           <div class="form-group">
-            <label for="bidRfqSelect">Active Consignment Tender:</label>
+            <label for="bidRfqSelect" data-i18n="lblSelectRfq">Active Consignment Tender:</label>
             <select id="bidRfqSelect" class="form-control" required></select>
           </div>
 
           <div class="info-card">
             <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-              <span style="color:#64748b;">Consignment Material:</span>
+              <span style="color:#64748b;" data-i18n="lblTenderMat">Consignment Material:</span>
               <strong id="dispMaterial">--</strong>
             </div>
             <div style="display:flex; justify-content:space-between;">
-              <span style="color:#64748b;">Quantity Demanded:</span>
+              <span style="color:#64748b;" data-i18n="lblTenderQty">Quantity Demanded:</span>
               <strong id="dispQty">-- Units</strong>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="bidSupplierSelect">Your Registered Company:</label>
+            <label for="bidSupplierSelect" data-i18n="lblSelectSup">Your Registered Company:</label>
             <select id="bidSupplierSelect" class="form-control" required></select>
           </div>
 
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.65rem;">
             <div class="form-group">
-              <label for="bidRound">Auction Round</label>
+              <label for="bidRound" data-i18n="lblRound">Auction Round</label>
               <select id="bidRound" class="form-control">
-                <option value="1">Round 1 (Opening Quote)</option>
-                <option value="2">Round 2 (Concession Counter)</option>
-                <option value="3">Round 3 (Final Offer)</option>
+                <option value="1" data-i18n="optRound1">Round 1 (Opening Quote)</option>
+                <option value="2" data-i18n="optRound2">Round 2 (Concession Counter)</option>
+                <option value="3" data-i18n="optRound3">Round 3 (Final Offer)</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="bidRate">Rate / Box (₹)</label>
+              <label for="bidRate" data-i18n="lblBidRate">Rate / Box (₹)</label>
               <input type="number" id="bidRate" class="form-control" placeholder="e.g. 520" required>
             </div>
             <div class="form-group">
-              <label for="bidLead">Lead Days</label>
+              <label for="bidLead" data-i18n="lblBidLead">Lead Days</label>
               <input type="number" id="bidLead" class="form-control" value="3" required>
             </div>
             <div class="form-group">
-              <label for="bidBreakage">Max Breakage (%)</label>
+              <label for="bidBreakage" data-i18n="lblBidBreakage">Max Breakage (%)</label>
               <input type="number" id="bidBreakage" class="form-control" step="0.1" value="0.8" required>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="bidRemarks">Message / Notes to Proprietor</label>
-            <input type="text" id="bidRemarks" class="form-control" placeholder="e.g. Ready stock, transit wrapping included">
+            <label for="bidRemarks" data-i18n="lblBidRemarks">Message / Notes to Proprietor</label>
+            <input type="text" id="bidRemarks" class="form-control" data-i18n-placeholder="phBidRemarks" placeholder="e.g. Ready stock, transit wrapping included">
           </div>
 
-          <button type="submit" class="btn-submit btn-vendor">🚀 Send Live Bid to Buyer</button>
+          <button type="submit" class="btn-submit btn-vendor" data-i18n="btnSubmitBid">🚀 Send Live Bid to Buyer</button>
         </form>
 
         <div id="bidFeedback" style="display:none; margin-top: 1rem; background: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 0.75rem;">
-          <div style="font-weight: 700; color: #065f46; font-size: 0.88rem;">Buyer Agent Response Received:</div>
+          <div style="font-weight: 700; color: #065f46; font-size: 0.88rem;" data-i18n="feedbackTitle">Buyer Agent Response Received:</div>
           <div id="bidFeedbackText" style="font-size: 0.83rem; margin-top: 0.25rem; color: #047857;"></div>
         </div>
       </div>
@@ -213,20 +247,182 @@
 
   </div>
 
-  <div class="footer-note">
+  <div class="footer-note" data-i18n="footerText">
     Shree Mahalaxmi Marbel and Granite — Mudhal Titta, Kolhapur | Academic Prototype (DYPCET Kolhapur)
   </div>
 
   <script>
+    let currentGatewayLang = localStorage.getItem('negotiagent_lang') || 'en';
     let globalRfqs = [];
     let globalSuppliers = [];
 
-    // --- OWNER SIGN-IN AUTHENTICATION ---
+    // --- DICTIONARY FOR LOGIN & SUPPLIER GATEWAY ---
+    const gatewayTranslations = {
+      en: {
+        langLabel: "🌐 Language / भाषा / भाषा:",
+        badgeOwner: "Proprietor Access",
+        ownerTitle: "Buyer Sign-In",
+        ownerDesc: "Internal management portal. Authorized commercial login only.",
+        lblUsername: "Username",
+        lblPassword: "Password",
+        btnOwnerSignIn: "Sign In →",
+        errInvalidCreds: "Invalid username or password.",
+        badgeSupplier: "Supplier Terminal",
+        supplierTitle: "Supplier Registration & Bidding",
+        supplierDesc: "Vendor portal for regional suppliers and distributors. Register company or submit bids directly.",
+        tabReg: "1. Register Company",
+        tabBid: "2. Live Bidding Room",
+        lblSupId: "Supplier ID Code",
+        lblSupName: "Company / Depot Name",
+        phSupName: "e.g. Kolhapur Regional Tiles Mart",
+        lblSupHub: "Depot / Manufacturing Hub",
+        phSupHub: "e.g. MIDC Shiroli, Kolhapur",
+        lblSupBase: "List Quote (₹ / Box)",
+        lblSupWalkaway: "Bottom Margin (₹ / Box)",
+        lblSupLead: "Standard Lead (Days)",
+        lblSupBreakage: "Breakage Guarantee (%)",
+        btnRegisterSup: "Register Company & Proceed to Bidding →",
+        msgRegSuccess: "Company successfully registered! Opening Bidding Room...",
+        lblSelectRfq: "Active Consignment Tender:",
+        lblTenderMat: "Consignment Material:",
+        lblTenderQty: "Quantity Demanded:",
+        lblSelectSup: "Your Registered Company:",
+        lblRound: "Auction Round",
+        optRound1: "Round 1 (Opening Quote)",
+        optRound2: "Round 2 (Concession Counter)",
+        optRound3: "Round 3 (Final Offer)",
+        lblBidRate: "Rate / Box (₹)",
+        lblBidLead: "Lead Days",
+        lblBidBreakage: "Max Breakage (%)",
+        lblBidRemarks: "Message / Notes to Proprietor",
+        phBidRemarks: "e.g. Ready stock, transit wrapping included",
+        btnSubmitBid: "🚀 Send Live Bid to Buyer",
+        feedbackTitle: "Buyer Agent Response Received:",
+        noRfqs: "-- No open RFQs found --",
+        promptRegFirst: "-- Please register your company first --",
+        footerText: "Shree Mahalaxmi Marbel and Granite — Mudhal Titta, Kolhapur | Academic Prototype (DYPCET Kolhapur)"
+      },
+      hi: {
+        langLabel: "🌐 भाषा / Language / भाषा:",
+        badgeOwner: "मालिक / खरीदार पोर्टल",
+        ownerTitle: "खरीदार लॉगिन",
+        ownerDesc: "आंतरिक प्रबंधन पोर्टल। केवल अधिकृत व्यावसायिक उपयोग के लिए।",
+        lblUsername: "उपयोगकर्ता नाम (Username)",
+        lblPassword: "पासवर्ड (Password)",
+        btnOwnerSignIn: "लॉगिन करें →",
+        errInvalidCreds: "अमान्य उपयोगकर्ता नाम या पासवर्ड।",
+        badgeSupplier: "सप्लायर टर्मिनल",
+        supplierTitle: "सप्लायर पंजीकरण एवं बोली",
+        supplierDesc: "क्षेत्रीय सप्लायर्स और वितरकों के लिए पोर्टल। कंपनी पंजीकृत करें या सीधे लाइव बोली लगाएं।",
+        tabReg: "1. कंपनी पंजीकृत करें",
+        tabBid: "2. लाइव बिडिंग रूम",
+        lblSupId: "सप्लायर आईडी कोड",
+        lblSupName: "कंपनी / डिपो का नाम",
+        phSupName: "उदा. कोल्हापुर टाइल्स मार्ट",
+        lblSupHub: "डिपो / निर्माण केंद्र",
+        phSupHub: "उदा. शिरोली एमआईडीसी, कोल्हापुर",
+        lblSupBase: "शुरुआती दर (₹ / बॉक्स)",
+        lblSupWalkaway: "न्यूनतम स्वीकार्य दर (₹ / बॉक्स)",
+        lblSupLead: "सामान्य डिलीवरी दिन",
+        lblSupBreakage: "टूट-फूट गारंटी (%)",
+        btnRegisterSup: "कंपनी पंजीकृत करें और बिडिंग शुरू करें →",
+        msgRegSuccess: "कंपनी सफलतापूर्वक पंजीकृत हुई! बिडिंग रूम खुल रहा है...",
+        lblSelectRfq: "सक्रिय माल मांग (RFQ):",
+        lblTenderMat: "सामग्री का प्रकार:",
+        lblTenderQty: "आवश्यक मात्रा:",
+        lblSelectSup: "आपकी पंजीकृत कंपनी:",
+        lblRound: "बिडिंग राउंड",
+        optRound1: "राउंड 1 (शुरुआती कोट)",
+        optRound2: "राउंड 2 (छूट एवं काउंटर ऑफर)",
+        optRound3: "राउंड 3 (अंतिम ऑफर)",
+        lblBidRate: "कोटेड दर / बॉक्स (₹)",
+        lblBidLead: "डिलीवरी दिन",
+        lblBidBreakage: "अधिकतम टूट-फूट (%)",
+        lblBidRemarks: "मालिक को संदेश / टिप्पणी",
+        phBidRemarks: "उदा. माल तैयार है, सुरक्षित पैकिंग उपलब्ध",
+        btnSubmitBid: "🚀 खरीदार को लाइव बोली भेजें",
+        feedbackTitle: "खरीदार एजेंट का जवाब प्राप्त हुआ:",
+        noRfqs: "-- कोई सक्रिय RFQ नहीं मिला --",
+        promptRegFirst: "-- कृपया पहले अपनी कंपनी पंजीकृत करें --",
+        footerText: "श्री महालक्ष्मी मार्बल एंड ग्रेनाइट — मुधळ तिट्टा, कोल्हापुर | अकादमिक प्रोटोटाइप (DYPCET कोल्हापुर)"
+      },
+      mr: {
+        langLabel: "🌐 भाषा / भाषा / Language:",
+        badgeOwner: "मालक / खरेदीदार प्रवेश",
+        ownerTitle: "खरेदीदार लॉगिन",
+        ownerDesc: "अंतर्गत व्यवस्थापन पोर्टल. केवळ अधिकृत व्यावसायिक वापरासाठी.",
+        lblUsername: "वापरकर्ता नाव (Username)",
+        lblPassword: "पासवर्ड (Password)",
+        btnOwnerSignIn: "लॉगिन करा →",
+        errInvalidCreds: "चुकीचे नाव किंवा पासवर्ड.",
+        badgeSupplier: "पुरवठादार टर्मिनल",
+        supplierTitle: "पुरवठादार नोंदणी आणि बोली",
+        supplierDesc: "प्रादेशिक पुरवठादारांसाठी पोर्टल. स्वतःची कंपनी नोंदवा किंवा थेट मालकाला बोली पाठवा.",
+        tabReg: "१. कंपनी नोंदणी करा",
+        tabBid: "२. थेट बिडिंग रूम",
+        lblSupId: "पुरवठादार कोड",
+        lblSupName: "कंपनी / डेपोचे नाव",
+        phSupName: "उदा. कोल्हापूर टाईल्स मार्ट",
+        lblSupHub: "डेपो / फॅक्टरी पत्ता",
+        phSupHub: "उदा. शिरोली एमआयडीसी, कोल्हापूर",
+        lblSupBase: "सुरुवातीचा दर (₹ / बॉक्स)",
+        lblSupWalkaway: "किमान अंतिम दर (₹ / बॉक्स)",
+        lblSupLead: "डिलिव्हरी दिवस",
+        lblSupBreakage: "तुटफूट हमी (%)",
+        btnRegisterSup: "कंपनी जतन करा आणि बिडिंग सुरू करा →",
+        msgRegSuccess: "कंपनी यशस्वीपणे नोंदवली गेली! बिडिंग रूम उघडत आहे...",
+        lblSelectRfq: "सध्याची खरेदी मागणी (RFQ):",
+        lblTenderMat: "मालाचा प्रकार:",
+        lblTenderQty: "मागणी संख्या:",
+        lblSelectSup: "तुमची नोंदणीकृत कंपनी:",
+        lblRound: "बिडिंग फेरी",
+        optRound1: "फेरी १ (प्राथमिक कोट)",
+        optRound2: "फेरी २ (सवलत / काउंटर ऑफर)",
+        optRound3: "फेरी ३ (अंतिम ऑफर)",
+        lblBidRate: "दर / बॉक्स (₹)",
+        lblBidLead: "डिलिव्हरी दिवस",
+        lblBidBreakage: "कमाल तुटफूट (%)",
+        lblBidRemarks: "मालकास संदेश / टिप्पणी",
+        phBidRemarks: "उदा. स्टॉक तयार आहे, वाहतूक पॅकिंगसह",
+        btnSubmitBid: "🚀 थेट मोबाईलवरून बोली पाठवा",
+        feedbackTitle: "खरेदीदार एजंटकडून काउंटर ऑफर प्राप्त:",
+        noRfqs: "-- कोणतीही मागणी उपलब्ध नाही --",
+        promptRegFirst: "-- कृपया आधी तुमची कंपनी नोंदवा --",
+        footerText: "श्री महालक्ष्मी मार्बल अँड ग्रॅनाईट — मुधळ तिट्टा, कोल्हापूर | शैक्षणिक प्रोटोटाईप (DYPCET कोल्हापूर)"
+      }
+    };
+
+    function applyGatewayTranslations(lang) {
+      currentGatewayLang = lang;
+      localStorage.setItem('negotiagent_lang', lang);
+      const dict = gatewayTranslations[lang] || gatewayTranslations['en'];
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) el.textContent = dict[key];
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (dict[key]) el.placeholder = dict[key];
+      });
+    }
+
+    const langSelector = document.getElementById('loginLangSelector');
+    langSelector.value = currentGatewayLang;
+    langSelector.addEventListener('change', (e) => {
+      applyGatewayTranslations(e.target.value);
+      loadBiddingRoomData();
+    });
+    applyGatewayTranslations(currentGatewayLang);
+
+    // --- OWNER SIGN-IN ---
     document.getElementById('ownerLoginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const u = document.getElementById('ownerUsername').value.trim();
       const p = document.getElementById('ownerPassword').value.trim();
       const alertBox = document.getElementById('loginAlert');
+      const dict = gatewayTranslations[currentGatewayLang] || gatewayTranslations['en'];
 
       if ((u === 'admin' && p === 'mahalaxmi@123') || (u === 'vikram' && p === 'kolhapur')) {
         sessionStorage.setItem('negotiagent_auth', 'authenticated_owner');
@@ -234,12 +430,12 @@
         window.location.href = '/index.html';
       } else {
         alertBox.className = 'alert-box error';
-        alertBox.textContent = 'Invalid username or password.';
+        alertBox.textContent = dict.errInvalidCreds;
         alertBox.style.display = 'block';
       }
     });
 
-    // --- SUPPLIER TAB TOGGLING ---
+    // --- TAB TOGGLE ---
     const btnTabRegister = document.getElementById('btnTabRegister');
     const btnTabNegotiate = document.getElementById('btnTabNegotiate');
     const paneSupplierRegister = document.getElementById('paneSupplierRegister');
@@ -262,10 +458,11 @@
 
     document.getElementById('regId').value = 'SUP-VENDOR-' + Math.floor(100 + Math.random() * 900);
 
-    // --- SUPPLIER REGISTRATION ---
+    // --- SUPPLIER QUICK REGISTRATION ---
     document.getElementById('supplierQuickRegForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('regAlert');
+      const dict = gatewayTranslations[currentGatewayLang] || gatewayTranslations['en'];
       alertBox.style.display = 'none';
 
       const payload = {
@@ -294,12 +491,12 @@
         }
 
         alertBox.className = 'alert-box success';
-        alertBox.textContent = `Company "${payload.name}" successfully registered! Opening Bidding Room...`;
+        alertBox.textContent = `"${payload.name}" - ${dict.msgRegSuccess}`;
         alertBox.style.display = 'block';
 
         setTimeout(() => {
           btnTabNegotiate.click();
-        }, 900);
+        }, 850);
       } catch (err) {
         alertBox.className = 'alert-box error';
         alertBox.textContent = err.message;
@@ -307,9 +504,10 @@
       }
     });
 
-    // --- LOAD RFQS & SUPPLIERS ---
+    // --- LOAD BIDDING ROOM DATA ---
     async function loadBiddingRoomData() {
       try {
+        const dict = gatewayTranslations[currentGatewayLang] || gatewayTranslations['en'];
         const [rRes, sRes] = await Promise.all([fetch('/api/rfqs'), fetch('/api/suppliers')]);
         if (rRes.ok) globalRfqs = await rRes.json();
         if (sRes.ok) globalSuppliers = await sRes.json();
@@ -319,11 +517,11 @@
 
         rfqSelect.innerHTML = globalRfqs.length > 0 
           ? globalRfqs.map(r => `<option value="${r.id}">${r.id} - ${r.category}</option>`).join('')
-          : '<option value="">-- No open RFQs found --</option>';
+          : `<option value="">${dict.noRfqs}</option>`;
 
         supSelect.innerHTML = globalSuppliers.length > 0
           ? globalSuppliers.map(s => `<option value="${s.id}">${s.name} (${s.hub_location})</option>`).join('')
-          : '<option value="">-- Please register your company first --</option>';
+          : `<option value="">${dict.promptRegFirst}</option>`;
 
         updatePublicTenderInfo();
         rfqSelect.onchange = updatePublicTenderInfo;
@@ -373,7 +571,7 @@
         const data = await res.json();
         feedback.style.display = 'block';
         feedbackText.innerHTML = `
-          <strong>Your Offer:</strong> ₹${data.submitted_rate}/box | <strong>Buyer Counter:</strong> ₹${data.buyer_counter}/box<br>
+          <strong>Quote:</strong> ₹${data.submitted_rate}/box | <strong>Buyer Counter:</strong> ₹${data.buyer_counter}/box<br>
           <strong>Status:</strong> ${data.decision}
         `;
 

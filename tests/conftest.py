@@ -3,6 +3,7 @@ Pytest Fixtures & Test Setup
 Provides an isolated in-memory SQLite database and FastAPI TestClient.
 """
 
+import hashlib
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -24,16 +25,23 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+def hash_test_password(password: str) -> str:
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+
 @pytest.fixture(scope="function")
 def db_session():
     """Creates a fresh database schema for each test and seeds baseline data."""
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
 
-    # Seed baseline suppliers for tests
+    # Seed baseline suppliers for tests with required credentials
     suppliers = [
         Supplier(
             id="SUP-TEST-MORBI",
+            username="test_morbi",
+            password_hash=hash_test_password("morbi123"),
+            contact_number="+91 98250 12345",
             name="Morbi Ceramics Hub Direct",
             hub_location="Morbi Industrial Area, Gujarat",
             base_price_per_box=540.0,
@@ -47,6 +55,9 @@ def db_session():
         ),
         Supplier(
             id="SUP-TEST-KOLH",
+            username="test_kolhapur",
+            password_hash=hash_test_password("kolhapur123"),
+            contact_number="+91 98900 54321",
             name="Kolhapur Regional Tiles & Granite Yard",
             hub_location="MIDC Shiroli, Kolhapur",
             base_price_per_box=575.0,

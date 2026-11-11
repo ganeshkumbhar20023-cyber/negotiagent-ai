@@ -115,63 +115,6 @@
     .badge-seller { background: #fef3c7; color: #92400e; }
     .title-h2 { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem; }
     .desc-p { font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem; line-height: 1.45; }
-
-    /* FLIPKART STYLE PUSH BANNER */
-    .supplier-live-notice {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-left: 4px solid #2563eb;
-      border-radius: 6px;
-      padding: 0.85rem;
-      margin-bottom: 1.25rem;
-      animation: pulseGlow 2.5s infinite;
-    }
-    @keyframes pulseGlow {
-      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.25); }
-      70% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
-    }
-    .notice-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.35rem;
-    }
-    .pulse-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      background: #2563eb;
-      border-radius: 50%;
-      margin-right: 5px;
-    }
-    .notice-title {
-      font-weight: 700;
-      color: #1e40af;
-      font-size: 0.88rem;
-      display: flex;
-      align-items: center;
-    }
-    .notice-body {
-      font-size: 0.82rem;
-      color: #334155;
-      line-height: 1.45;
-    }
-    .btn-quick-bid {
-      display: inline-block;
-      margin-top: 0.5rem;
-      padding: 0.35rem 0.75rem;
-      background: #2563eb;
-      color: white;
-      border-radius: 4px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-    }
-    .btn-quick-bid:hover { background: #1d4ed8; }
-
     .btn-notif-perm {
       background: #dbeafe;
       border: 1px dashed #2563eb;
@@ -189,7 +132,30 @@
       justify-content: center;
       transition: background 0.2s;
     }
-
+    .supplier-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 0.75rem;
+    }
+    .sub-tab {
+      flex: 1;
+      padding: 0.65rem 0.5rem;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .sub-tab.active {
+      background: #d97706;
+      color: #ffffff;
+      border-color: #d97706;
+    }
     .form-group { margin-bottom: 0.95rem; text-align: left; }
     .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
     .form-control { width: 100%; padding: 0.7rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.92rem; }
@@ -200,10 +166,6 @@
     .btn-owner:hover { background: #1e293b; }
     .btn-vendor { background: #d97706; color: #ffffff; margin-top: 0.5rem; }
     .btn-vendor:hover { background: #b45309; }
-    .supplier-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; }
-    .sub-tab { flex: 1; padding: 0.65rem 0.5rem; border: 1px solid #cbd5e1; background: #ffffff; border-radius: 6px; font-size: 0.88rem; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.2s; }
-    .sub-tab.active { background: #d97706; color: #ffffff; border-color: #d97706; }
-    .info-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.85rem; font-size: 0.88rem; margin-bottom: 1rem; }
     .footer-note { font-size: 0.8rem; color: #94a3b8; text-align: center; margin-top: 1.5rem; }
   </style>
 </head>
@@ -248,66 +210,74 @@
           <label for="ownerPassword" data-i18n="lblPassword">Password</label>
           <input type="password" id="ownerPassword" class="form-control" autocomplete="new-password" required>
         </div>
-        <button type="submit" class="btn-submit btn-owner" data-i18n="btnOwnerSignIn">Sign In →</button>
+        <button type="submit" class="btn-submit btn-owner" data-i18n="btnOwnerSignIn">Sign In to Dashboard →</button>
       </form>
     </div>
 
-    <!-- RIGHT: SUPPLIER PORTAL (ACTIVE MATERIAL NOTIFICATION & AUDIO ALERTS) -->
+    <!-- RIGHT: SUPPLIER PORTAL (SECURE AUTHENTICATION) -->
     <div class="portal-section supplier-section">
       <span class="role-badge badge-seller">
         <span>🤝</span>
         <span data-i18n="badgeSupplier">Supplier Terminal (Desktop & Phone)</span>
       </span>
-      <h2 class="title-h2" data-i18n="supplierTitle">Supplier Registration & Bidding</h2>
-      <p class="desc-p" data-i18n="supplierDesc">Vendor portal for regional suppliers and distributors. Register company or submit bids directly.</p>
+      <h2 class="title-h2" data-i18n="supplierTitle">Supplier Portal</h2>
+      <p class="desc-p" data-i18n="supplierDesc">Sign in to your private vendor account to view tender requirements and negotiate safely.</p>
 
-      <!-- FLIPKART STYLE PUSH NOTIFICATION OPT-IN BUTTON -->
+      <!-- PUSH NOTIFICATION PERMISSION BUTTON -->
       <button type="button" id="btnEnableNotifications" class="btn-notif-perm">
         <span>🔔</span>
         <span data-i18n="btnNotifEnable">Allow Notifications</span>
       </button>
 
-      <!-- ACTIVE MATERIAL NOTIFICATION ALERT FOR SUPPLIERS -->
-      <div id="supplierRequirementNotice" class="supplier-live-notice" style="display:none;">
-        <div class="notice-header">
-          <span class="notice-title">
-            <span class="pulse-dot"></span>
-            <span data-i18n="noticeHead">📢 Consignment Requirement Open</span>
-          </span>
-          <span id="noticeBadgeTime" style="font-size:0.72rem; color:#64748b; font-weight:600;">ACTIVE TENDER</span>
-        </div>
-        <div class="notice-body" id="noticeTextDetails">
-          <!-- Populated live via /api/rfqs -->
-        </div>
-        <button type="button" class="btn-quick-bid" id="btnQuickBidAction" data-i18n="btnQuickBid">⚡ Bid on this Consignment</button>
-      </div>
-
+      <!-- SUPPLIER NAVIGATION TABS -->
       <div class="supplier-tabs">
-        <button id="btnTabRegister" class="sub-tab active" type="button" data-i18n="tabReg">1. Register Company</button>
-        <button id="btnTabNegotiate" class="sub-tab" type="button" data-i18n="tabBid">2. Live Bidding Room</button>
+        <button id="btnTabSupplierLogin" class="sub-tab active" type="button" data-i18n="tabSupLogin">Supplier Sign-In</button>
+        <button id="btnTabSupplierRegister" class="sub-tab" type="button" data-i18n="tabSupReg">Register Company</button>
       </div>
 
-      <!-- VIEW A: SUPPLIER REGISTRATION FORM (WITH CONTACT NUMBER) -->
-      <div id="paneSupplierRegister">
-        <div id="regAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
-        <form id="supplierQuickRegForm" autocomplete="off">
+      <!-- VIEW 1: SUPPLIER SIGN-IN -->
+      <div id="paneSupplierLogin">
+        <div id="supLoginAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
+        <form id="supplierLoginForm" autocomplete="off">
           <div class="form-group">
-            <label for="regId" data-i18n="lblSupId">Supplier ID Code</label>
-            <input type="text" id="regId" class="form-control" value="SUP-KOLH-01" required>
+            <label for="supLoginUsername" data-i18n="lblSupUsername">Supplier Username</label>
+            <input type="text" id="supLoginUsername" class="form-control" placeholder="Enter your registered username" required>
+          </div>
+          <div class="form-group">
+            <label for="supLoginPassword" data-i18n="lblSupPassword">Password</label>
+            <input type="password" id="supLoginPassword" class="form-control" placeholder="Enter your password" required>
+          </div>
+          <button type="submit" class="btn-submit btn-vendor" data-i18n="btnSupplierSignIn">Enter Supplier Dashboard →</button>
+        </form>
+      </div>
+
+      <!-- VIEW 2: SUPPLIER REGISTRATION FORM -->
+      <div id="paneSupplierRegister" style="display:none;">
+        <div id="supRegAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
+        <form id="supplierRegForm" autocomplete="off">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.65rem;">
+            <div class="form-group">
+              <label for="regUsername" data-i18n="lblCreateUser">Choose Username</label>
+              <input type="text" id="regUsername" class="form-control" placeholder="e.g. kolhapur_tiles" required>
+            </div>
+            <div class="form-group">
+              <label for="regPassword" data-i18n="lblCreatePass">Create Password</label>
+              <input type="password" id="regPassword" class="form-control" placeholder="Min 4 characters" required>
+            </div>
           </div>
           <div class="form-group">
             <label for="regName" data-i18n="lblSupName">Company / Depot Name</label>
             <input type="text" id="regName" class="form-control" data-i18n-placeholder="phSupName" placeholder="e.g. Kolhapur Regional Tiles Mart" required>
           </div>
-          <div class="form-group">
-            <label for="regPhone" data-i18n="lblSupPhone">Supplier Contact / WhatsApp Number</label>
-            <input type="tel" id="regPhone" class="form-control" placeholder="+91 98765 43210" pattern="[+0-9\s-]{10,15}" required>
-          </div>
-          <div class="form-group">
-            <label for="regHub" data-i18n="lblSupHub">Depot / Manufacturing Hub</label>
-            <input type="text" id="regHub" class="form-control" data-i18n-placeholder="phSupHub" placeholder="e.g. MIDC Shiroli, Kolhapur" required>
-          </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.65rem;">
+            <div class="form-group">
+              <label for="regPhone" data-i18n="lblSupPhone">Supplier Contact / WhatsApp Number</label>
+              <input type="tel" id="regPhone" class="form-control" placeholder="+91 98765 43210" pattern="[+0-9\s-]{10,15}" required>
+            </div>
+            <div class="form-group">
+              <label for="regHub" data-i18n="lblSupHub">Depot / Manufacturing Hub</label>
+              <input type="text" id="regHub" class="form-control" data-i18n-placeholder="phSupHub" placeholder="e.g. MIDC Shiroli, Kolhapur" required>
+            </div>
             <div class="form-group">
               <label for="regBase" data-i18n="lblSupBase">List Quote (₹ / Box)</label>
               <input type="number" id="regBase" class="form-control" value="540" required>
@@ -325,70 +295,8 @@
               <input type="number" id="regBreakage" class="form-control" step="0.1" value="0.8" required>
             </div>
           </div>
-          <button type="submit" class="btn-submit btn-vendor" data-i18n="btnRegisterSup">Register Company & Proceed to Bidding →</button>
+          <button type="submit" class="btn-submit btn-vendor" data-i18n="btnRegisterSup">Save Credentials & Register →</button>
         </form>
-      </div>
-
-      <!-- VIEW B: LIVE NEGOTIATION FORM -->
-      <div id="paneSupplierNegotiate" style="display:none;">
-        <div id="bidAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
-        <form id="supplierLiveBidForm" autocomplete="off">
-          <div class="form-group">
-            <label for="bidRfqSelect" data-i18n="lblSelectRfq">Active Consignment Tender:</label>
-            <select id="bidRfqSelect" class="form-control" required></select>
-          </div>
-
-          <div class="info-card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
-              <span style="color:#64748b;" data-i18n="lblTenderMat">Consignment Material:</span>
-              <strong id="dispMaterial">--</strong>
-            </div>
-            <div style="display:flex; justify-content:space-between;">
-              <span style="color:#64748b;" data-i18n="lblTenderQty">Quantity Demanded:</span>
-              <strong id="dispQty">-- Units</strong>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="bidSupplierSelect" data-i18n="lblSelectSup">Your Registered Company:</label>
-            <select id="bidSupplierSelect" class="form-control" required></select>
-          </div>
-
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
-            <div class="form-group">
-              <label for="bidRound" data-i18n="lblRound">Auction Round</label>
-              <select id="bidRound" class="form-control">
-                <option value="1" data-i18n="optRound1">Round 1 (Opening Quote)</option>
-                <option value="2" data-i18n="optRound2">Round 2 (Concession Counter)</option>
-                <option value="3" data-i18n="optRound3">Round 3 (Final Offer)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="bidRate" data-i18n="lblBidRate">Rate / Box (₹)</label>
-              <input type="number" id="bidRate" class="form-control" placeholder="e.g. 520" required>
-            </div>
-            <div class="form-group">
-              <label for="bidLead" data-i18n="lblBidLead">Lead Days</label>
-              <input type="number" id="bidLead" class="form-control" value="3" required>
-            </div>
-            <div class="form-group">
-              <label for="bidBreakage" data-i18n="lblBidBreakage">Max Breakage (%)</label>
-              <input type="number" id="bidBreakage" class="form-control" step="0.1" value="0.8" required>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="bidRemarks" data-i18n="lblBidRemarks">Message / Notes to Proprietor</label>
-            <input type="text" id="bidRemarks" class="form-control" data-i18n-placeholder="phBidRemarks" placeholder="e.g. Ready stock, transit wrapping included">
-          </div>
-
-          <button type="submit" class="btn-submit btn-vendor" data-i18n="btnSubmitBid">🚀 Send Live Bid to Buyer</button>
-        </form>
-
-        <div id="bidFeedback" style="display:none; margin-top: 1rem; background: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 0.75rem;">
-          <div style="font-weight: 700; color: #065f46; font-size: 0.88rem;" data-i18n="feedbackTitle">Buyer Agent Response Received:</div>
-          <div id="bidFeedbackText" style="font-size: 0.83rem; margin-top: 0.25rem; color: #047857;"></div>
-        </div>
       </div>
 
     </div>
@@ -401,17 +309,10 @@
 
   <script>
     let currentGatewayLang = localStorage.getItem('negotiagent_lang') || 'en';
-    let globalRfqs = [];
-    let globalSuppliers = [];
-    let lastKnownRfqId = null;
 
-    // --- REGISTER SERVICE WORKER FOR LOCK-SCREEN PUSH NOTIFICATIONS ---
+    // Register Service Worker for Notifications
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then((reg) => {
-        console.log('Push Service Worker Registered:', reg.scope);
-      }).catch((err) => {
-        console.log('SW Registration bypassed:', err);
-      });
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
 
     // --- TRILINGUAL DICTIONARY ---
@@ -424,18 +325,20 @@
         ownerDesc: "Internal management portal. Authorized commercial login only.",
         lblUsername: "Username",
         lblPassword: "Password",
-        btnOwnerSignIn: "Sign In →",
+        btnOwnerSignIn: "Sign In to Dashboard →",
         errInvalidCreds: "Invalid username or password.",
         badgeSupplier: "Supplier Terminal (Desktop & Phone)",
-        supplierTitle: "Supplier Registration & Bidding",
-        supplierDesc: "Vendor portal for regional suppliers and distributors. Register company or submit bids directly.",
+        supplierTitle: "Supplier Portal",
+        supplierDesc: "Sign in to your private vendor account to view tender requirements and negotiate safely.",
         btnNotifEnable: "Allow Notifications",
         btnNotifEnabled: "✅ Push Notifications Active on Lock Screen",
-        noticeHead: "📢 Consignment Requirement Open",
-        btnQuickBid: "⚡ Bid on this Consignment",
-        tabReg: "1. Register Company",
-        tabBid: "2. Live Bidding Room",
-        lblSupId: "Supplier ID Code",
+        tabSupLogin: "Supplier Sign-In",
+        tabSupReg: "Register Company",
+        lblSupUsername: "Supplier Username",
+        lblSupPassword: "Password",
+        btnSupplierSignIn: "Enter Supplier Dashboard →",
+        lblCreateUser: "Choose Username",
+        lblCreatePass: "Create Password",
         lblSupName: "Company / Depot Name",
         lblSupPhone: "Supplier Contact / WhatsApp Number",
         phSupName: "e.g. Kolhapur Regional Tiles Mart",
@@ -445,25 +348,7 @@
         lblSupWalkaway: "Bottom Margin (₹ / Box)",
         lblSupLead: "Standard Lead (Days)",
         lblSupBreakage: "Breakage Guarantee (%)",
-        btnRegisterSup: "Register Company & Proceed to Bidding →",
-        msgRegSuccess: "Company successfully registered! Opening Bidding Room...",
-        lblSelectRfq: "Active Consignment Tender:",
-        lblTenderMat: "Consignment Material:",
-        lblTenderQty: "Quantity Demanded:",
-        lblSelectSup: "Your Registered Company:",
-        lblRound: "Auction Round",
-        optRound1: "Round 1 (Opening Quote)",
-        optRound2: "Round 2 (Concession Counter)",
-        optRound3: "Round 3 (Final Offer)",
-        lblBidRate: "Rate / Box (₹)",
-        lblBidLead: "Lead Days",
-        lblBidBreakage: "Max Breakage (%)",
-        lblBidRemarks: "Message / Notes to Proprietor",
-        phBidRemarks: "e.g. Ready stock, transit wrapping included",
-        btnSubmitBid: "🚀 Send Live Bid to Buyer",
-        feedbackTitle: "Buyer Agent Response Received:",
-        noRfqs: "-- No open RFQs found --",
-        promptRegFirst: "-- Please register your company first --",
+        btnRegisterSup: "Save Credentials & Register →",
         footerText: "Shree Mahalaxmi Marbel and Granite — Mudhal Titta, Kolhapur | Academic Prototype (DYPCET Kolhapur)"
       },
       hi: {
@@ -474,18 +359,20 @@
         ownerDesc: "आंतरिक प्रबंधन पोर्टल। केवल अधिकृत व्यावसायिक उपयोग के लिए।",
         lblUsername: "उपयोगकर्ता नाम (Username)",
         lblPassword: "पासवर्ड (Password)",
-        btnOwnerSignIn: "लॉगिन करें →",
+        btnOwnerSignIn: "डैशबोर्ड में प्रवेश करें →",
         errInvalidCreds: "अमान्य उपयोगकर्ता नाम या पासवर्ड।",
         badgeSupplier: "सप्लायर टर्मिनल (डेस्कटॉप व मोबाइल)",
-        supplierTitle: "सप्लायर पंजीकरण एवं बोली",
-        supplierDesc: "क्षेत्रीय सप्लायर्स और वितरकों के लिए पोर्टल। कंपनी पंजीकृत करें या सीधे लाइव बोली लगाएं।",
+        supplierTitle: "सप्लायर पोर्टल",
+        supplierDesc: "अपनी कंपनी के खाते में लॉगिन करें और नई मांग पर सुरक्षित रूप से बोली लगाएं।",
         btnNotifEnable: "सूचनाएं चालू करें (Allow Notifications)",
         btnNotifEnabled: "✅ मोबाइल लॉक-स्क्रीन अलर्ट सक्रिय हैं",
-        noticeHead: "📢 नया माल मांग पत्र (Tender) जारी",
-        btnQuickBid: "⚡ इस मांग पर अभी बोली लगाएं",
-        tabReg: "1. कंपनी पंजीकृत करें",
-        tabBid: "2. लाइव बिडिंग रूम",
-        lblSupId: "सप्लायर आईडी कोड",
+        tabSupLogin: "सप्लायर लॉगिन",
+        tabSupReg: "कंपनी पंजीकरण",
+        lblSupUsername: "सप्लायर यूजरनेम",
+        lblSupPassword: "पासवर्ड",
+        btnSupplierSignIn: "सप्लायर डैशबोर्ड खोलें →",
+        lblCreateUser: "यूजरनेम चुनें",
+        lblCreatePass: "पासवर्ड बनाएं",
         lblSupName: "कंपनी / डिपो का नाम",
         lblSupPhone: "सप्लायर मोबाइल / व्हाट्सएप नंबर",
         phSupName: "उदा. कोल्हापुर टाइल्स मार्ट",
@@ -495,25 +382,7 @@
         lblSupWalkaway: "न्यूनतम स्वीकार्य दर (₹ / बॉक्स)",
         lblSupLead: "सामान्य डिलीवरी दिन",
         lblSupBreakage: "टूट-फूट गारंटी (%)",
-        btnRegisterSup: "कंपनी पंजीकृत करें और बिडिंग शुरू करें →",
-        msgRegSuccess: "कंपनी सफलतापूर्वक पंजीकृत हुई! बिडिंग रूम खुल रहा है...",
-        lblSelectRfq: "सक्रिय माल मांग (RFQ):",
-        lblTenderMat: "सामग्री का प्रकार:",
-        lblTenderQty: "आवश्यक मात्रा:",
-        lblSelectSup: "आपकी पंजीकृत कंपनी:",
-        lblRound: "बिडिंग राउंड",
-        optRound1: "राउंड 1 (शुरुआती कोट)",
-        optRound2: "राउंड 2 (छूट एवं काउंटर ऑफर)",
-        optRound3: "राउंड 3 (अंतिम ऑफर)",
-        lblBidRate: "कोटेड दर / बॉक्स (₹)",
-        lblBidLead: "डिलीवरी दिन",
-        lblBidBreakage: "अधिकतम टूट-फूट (%)",
-        lblBidRemarks: "मालिक को संदेश / टिप्पणी",
-        phBidRemarks: "उदा. माल तैयार है, सुरक्षित पैकिंग उपलब्ध",
-        btnSubmitBid: "🚀 खरीदार को लाइव बोली भेजें",
-        feedbackTitle: "खरीदार एजेंट का जवाब प्राप्त हुआ:",
-        noRfqs: "-- कोई सक्रिय RFQ नहीं मिला --",
-        promptRegFirst: "-- कृपया पहले अपनी कंपनी पंजीकृत करें --",
+        btnRegisterSup: "खाता बनाएं एवं पंजीकरण करें →",
         footerText: "श्री महालक्ष्मी मार्बल एंड ग्रेनाइट — मुधळ तिट्टा, कोल्हापुर | अकादमिक प्रोटोटाइप (DYPCET कोल्हापुर)"
       },
       mr: {
@@ -524,18 +393,20 @@
         ownerDesc: "अंतर्गत व्यवस्थापन पोर्टल. केवळ अधिकृत व्यावसायिक वापरासाठी.",
         lblUsername: "वापरकर्ता नाव (Username)",
         lblPassword: "पासवर्ड (Password)",
-        btnOwnerSignIn: "लॉगिन करा →",
+        btnOwnerSignIn: "डॅशबोर्डवर जा →",
         errInvalidCreds: "चुकीचे नाव किंवा पासवर्ड.",
         badgeSupplier: "पुरवठादार टर्मिनल (मोबाईल व संगणक)",
-        supplierTitle: "पुरवठादार नोंदणी आणि बोली",
-        supplierDesc: "प्रादेशिक पुरवठादारांसाठी पोर्टल. स्वतःची कंपनी नोंदवा किंवा थेट मालकाला बोली पाठवा.",
+        supplierTitle: "पुरवठादार पोर्टल",
+        supplierDesc: "आपल्या कंपनीच्या खात्यात लॉगिन करा व मालाच्या मागणीवर थेट बोली लावा.",
         btnNotifEnable: "सूचना चालू करा (Allow Notifications)",
         btnNotifEnabled: "✅ लॉक-स्क्रीनवर थेट नोटिफिकेशन सक्रिय झाले",
-        noticeHead: "📢 नवीन माल खरेदी मागणी (Tender) उपलब्ध",
-        btnQuickBid: "⚡ या मागणीवर थेट बोली लावा",
-        tabReg: "१. कंपनी नोंदणी करा",
-        tabBid: "२. थेट बिडिंग रूम",
-        lblSupId: "पुरवठादार कोड",
+        tabSupLogin: "पुरवठादार लॉगिन",
+        tabSupReg: "कंपनी नोंदणी",
+        lblSupUsername: "पुरवठादार वापरकर्ता नाव",
+        lblSupPassword: "पासवर्ड",
+        btnSupplierSignIn: "पुरवठादार डॅशबोर्ड उघडा →",
+        lblCreateUser: "वापरकर्ता नाव निवडा",
+        lblCreatePass: "पासवर्ड तयार करा",
         lblSupName: "कंपनी / डेपोचे नाव",
         lblSupPhone: "पुरवठादार मोबाईल / व्हॉट्सॲप नंबर",
         phSupName: "उदा. कोल्हापूर टाईल्स मार्ट",
@@ -545,25 +416,7 @@
         lblSupWalkaway: "किमान अंतिम दर (₹ / बॉक्स)",
         lblSupLead: "डिलिव्हरी दिवस",
         lblSupBreakage: "तुटफूट हमी (%)",
-        btnRegisterSup: "कंपनी जतन करा आणि बिडिंग सुरू करा →",
-        msgRegSuccess: "कंपनी यशस्वीपणे नोंदवली गेली! बिडिंग रूम उघडत आहे...",
-        lblSelectRfq: "सध्याची खरेदी मागणी (RFQ):",
-        lblTenderMat: "मालाचा प्रकार:",
-        lblTenderQty: "मागणी संख्या:",
-        lblSelectSup: "तुमची नोंदणीकृत कंपनी:",
-        lblRound: "बिडिंग फेरी",
-        optRound1: "फेरी १ (प्राथमिक कोट)",
-        optRound2: "फेरी २ (सवलत / काउंटर ऑफर)",
-        optRound3: "फेरी ३ (अंतिम ऑफर)",
-        lblBidRate: "दर / बॉक्स (₹)",
-        lblBidLead: "डिलिव्हरी दिवस",
-        lblBidBreakage: "कमाल तुटफूट (%)",
-        lblBidRemarks: "मालकास संदेश / टिप्पणी",
-        phBidRemarks: "उदा. स्टॉक तयार आहे, वाहतूक पॅकिंगसह",
-        btnSubmitBid: "🚀 थेट बोली पाठवा",
-        feedbackTitle: "खरेदीदार एजंटकडून काउंटर ऑफर प्राप्त:",
-        noRfqs: "-- कोणतीही मागणी उपलब्ध नाही --",
-        promptRegFirst: "-- कृपया आधी तुमची कंपनी नोंदवा --",
+        btnRegisterSup: "खाते तयार करून नोंदवा →",
         footerText: "श्री महालक्ष्मी मार्बल अँड ग्रॅनाईट — मुधळ तिट्टा, कोल्हापूर | शैक्षणिक प्रोटोटाईप (DYPCET कोल्हापूर)"
       }
     };
@@ -586,60 +439,18 @@
 
     const langSelector = document.getElementById('loginLangSelector');
     langSelector.value = currentGatewayLang;
-    langSelector.addEventListener('change', (e) => {
-      applyGatewayTranslations(e.target.value);
-      loadBiddingRoomData();
-    });
+    langSelector.addEventListener('change', (e) => applyGatewayTranslations(e.target.value));
     applyGatewayTranslations(currentGatewayLang);
 
-    // --- AUDIO CHIME ---
-    function playAlertChime() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.4);
-      } catch (e) {
-        console.log("Audio alert blocked:", e);
-      }
-    }
-
-    // --- BROWSER PUSH NOTIFICATION PERMISSION ---
+    // Notification Permission Handling
     const btnEnableNotif = document.getElementById('btnEnableNotifications');
     if ("Notification" in window) {
       if (Notification.permission === "granted") {
-        btnEnableNotif.style.background = "#dcfce7";
-        btnEnableNotif.style.color = "#166534";
-        btnEnableNotif.style.borderColor = "#16a34a";
-        btnEnableNotif.textContent = gatewayTranslations[currentGatewayLang].btnNotifEnabled;
+        btnEnableNotif.style.display = "none";
       } else {
         btnEnableNotif.addEventListener('click', () => {
-          Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-              btnEnableNotif.style.background = "#dcfce7";
-              btnEnableNotif.style.color = "#166534";
-              btnEnableNotif.style.borderColor = "#16a34a";
-              btnEnableNotif.textContent = gatewayTranslations[currentGatewayLang].btnNotifEnabled;
-              playAlertChime();
-              // Trigger test Flipkart-style greeting notification
-              if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.ready.then(reg => {
-                  reg.showNotification("Shree Mahalaxmi Marbel & Granite", {
-                    body: "Notifications enabled! You will receive instant alerts for new tile & granite tenders.",
-                    icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-                    vibrate: [200, 100, 200]
-                  });
-                });
-              }
-            }
+          Notification.requestPermission().then(p => {
+            if (p === "granted") btnEnableNotif.style.display = "none";
           });
         });
       }
@@ -647,28 +458,7 @@
       btnEnableNotif.style.display = "none";
     }
 
-    // Deliver lock-screen notification via registered Service Worker
-    function fireDeviceNotification(rfq) {
-      playAlertChime();
-      const title = `🚨 New Demand: ${rfq.category}`;
-      const options = {
-        body: `${rfq.quantity} Boxes required at Mudhal Titta Depot. Tap to submit your sealed bid!`,
-        icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-        badge: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-        vibrate: [200, 100, 200],
-        data: { url: '/login.html' }
-      };
-
-      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification(title, options);
-        });
-      } else if ("Notification" in window && Notification.permission === "granted") {
-        new Notification(title, options);
-      }
-    }
-
-    // --- OWNER SIGN-IN ---
+    // Owner Login Submission
     document.getElementById('ownerLoginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const u = document.getElementById('ownerUsername').value.trim();
@@ -687,185 +477,111 @@
       }
     });
 
-    // --- TAB TOGGLE ---
-    const btnTabRegister = document.getElementById('btnTabRegister');
-    const btnTabNegotiate = document.getElementById('btnTabNegotiate');
-    const paneSupplierRegister = document.getElementById('paneSupplierRegister');
-    const paneSupplierNegotiate = document.getElementById('paneSupplierNegotiate');
+    // Sub-tab Toggling for Suppliers (Login vs Register)
+    const btnTabLogin = document.getElementById('btnTabSupplierLogin');
+    const btnTabRegister = document.getElementById('btnTabSupplierRegister');
+    const paneLogin = document.getElementById('paneSupplierLogin');
+    const paneRegister = document.getElementById('paneSupplierRegister');
+
+    btnTabLogin.addEventListener('click', () => {
+      btnTabLogin.classList.add('active');
+      btnTabRegister.classList.remove('active');
+      paneLogin.style.display = 'block';
+      paneRegister.style.display = 'none';
+    });
 
     btnTabRegister.addEventListener('click', () => {
       btnTabRegister.classList.add('active');
-      btnTabNegotiate.classList.remove('active');
-      paneSupplierRegister.style.display = 'block';
-      paneSupplierNegotiate.style.display = 'none';
+      btnTabLogin.classList.remove('active');
+      paneRegister.style.display = 'block';
+      paneLogin.style.display = 'none';
     });
 
-    btnTabNegotiate.addEventListener('click', () => {
-      btnTabNegotiate.classList.add('active');
-      btnTabRegister.classList.remove('active');
-      paneSupplierRegister.style.display = 'none';
-      paneSupplierNegotiate.style.display = 'block';
-      loadBiddingRoomData();
-    });
-
-    document.getElementById('regId').value = 'SUP-VENDOR-' + Math.floor(100 + Math.random() * 900);
-
-    document.getElementById('btnQuickBidAction').addEventListener('click', () => {
-      btnTabNegotiate.click();
-    });
-
-    // --- SUPPLIER REGISTRATION WITH PHONE NUMBER ---
-    document.getElementById('supplierQuickRegForm').addEventListener('submit', async (e) => {
+    // Supplier Login Submission
+    document.getElementById('supplierLoginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const alertBox = document.getElementById('regAlert');
-      const dict = gatewayTranslations[currentGatewayLang] || gatewayTranslations['en'];
+      const alertBox = document.getElementById('supLoginAlert');
       alertBox.style.display = 'none';
 
       const payload = {
-        id: document.getElementById('regId').value.trim(),
+        username: document.getElementById('supLoginUsername').value.trim(),
+        password: document.getElementById('supLoginPassword').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/suppliers/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Login failed');
+        }
+
+        const supplier = await res.json();
+        sessionStorage.setItem('negotiagent_supplier_id', supplier.id);
+        sessionStorage.setItem('negotiagent_supplier_name', supplier.name);
+        window.location.href = '/supplier_dashboard.html';
+      } catch (err) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = err.message;
+        alertBox.style.display = 'block';
+      }
+    });
+
+    // Supplier Registration Submission
+    document.getElementById('supplierRegForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('supRegAlert');
+      alertBox.style.display = 'none';
+
+      const payload = {
+        username: document.getElementById('regUsername').value.trim(),
+        password: document.getElementById('regPassword').value.trim(),
         name: document.getElementById('regName').value.trim(),
         contact_number: document.getElementById('regPhone').value.trim(),
         hub_location: document.getElementById('regHub').value.trim(),
-        agent_strategy: 'balanced',
         base_price_per_box: parseFloat(document.getElementById('regBase').value),
         min_walkaway_price: parseFloat(document.getElementById('regWalkaway').value),
         standard_lead_days: parseInt(document.getElementById('regLead').value, 10),
         min_lead_days: Math.max(1, parseInt(document.getElementById('regLead').value, 10) - 2),
         offered_breakage_pct: parseFloat(document.getElementById('regBreakage').value),
         quality_score: 92.0,
-        reliability_score: 90.0
+        reliability_score: 90.0,
+        agent_strategy: 'balanced'
       };
 
       try {
-        const res = await fetch('/api/suppliers', {
+        const res = await fetch('/api/suppliers/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.detail || 'Registration failed');
         }
 
+        const supplier = await res.json();
+        sessionStorage.setItem('negotiagent_supplier_id', supplier.id);
+        sessionStorage.setItem('negotiagent_supplier_name', supplier.name);
+
         alertBox.className = 'alert-box success';
-        alertBox.textContent = `"${payload.name}" - ${dict.msgRegSuccess}`;
+        alertBox.textContent = 'Account created successfully! Loading your dashboard...';
         alertBox.style.display = 'block';
 
         setTimeout(() => {
-          btnTabNegotiate.click();
-        }, 850);
+          window.location.href = '/supplier_dashboard.html';
+        }, 900);
       } catch (err) {
         alertBox.className = 'alert-box error';
         alertBox.textContent = err.message;
         alertBox.style.display = 'block';
       }
     });
-
-    // --- FETCH RFQS & TRIGGER NOTIFICATIONS ---
-    async function loadBiddingRoomData() {
-      try {
-        const dict = gatewayTranslations[currentGatewayLang] || gatewayTranslations['en'];
-        const [rRes, sRes] = await Promise.all([fetch('/api/rfqs'), fetch('/api/suppliers')]);
-        if (rRes.ok) globalRfqs = await rRes.json();
-        if (sRes.ok) globalSuppliers = await sRes.json();
-
-        const noticeBox = document.getElementById('supplierRequirementNotice');
-        const noticeText = document.getElementById('noticeTextDetails');
-
-        if (globalRfqs && globalRfqs.length > 0) {
-          const latestRfq = globalRfqs[0];
-
-          // Trigger lock-screen push notification when a new RFQ is detected
-          if (lastKnownRfqId !== null && lastKnownRfqId !== latestRfq.id) {
-            fireDeviceNotification(latestRfq);
-          }
-          lastKnownRfqId = latestRfq.id;
-
-          noticeBox.style.display = 'block';
-          noticeText.innerHTML = `
-            <strong>${latestRfq.category} (${latestRfq.size})</strong><br>
-            Quantity Required: <strong>${latestRfq.quantity} Boxes</strong> | Destination: <strong>Mudhal Titta Depot</strong><br>
-            <span style="font-size:0.75rem; color:#64748b;">Quality standard: ${latestRfq.quality_grade || 'Premium Grade'} | Delivery deadline: ${latestRfq.delivery_deadline || 'Urgent'}</span>
-          `;
-        } else {
-          noticeBox.style.display = 'none';
-        }
-
-        const rfqSelect = document.getElementById('bidRfqSelect');
-        const supSelect = document.getElementById('bidSupplierSelect');
-
-        rfqSelect.innerHTML = globalRfqs.length > 0 
-          ? globalRfqs.map(r => `<option value="${r.id}">${r.id} - ${r.category}</option>`).join('')
-          : `<option value="">${dict.noRfqs}</option>`;
-
-        supSelect.innerHTML = globalSuppliers.length > 0
-          ? globalSuppliers.map(s => `<option value="${s.id}">${s.name} (${s.hub_location})</option>`).join('')
-          : `<option value="">${dict.promptRegFirst}</option>`;
-
-        updatePublicTenderInfo();
-        rfqSelect.onchange = updatePublicTenderInfo;
-      } catch (err) {
-        console.error('Error loading bidding data:', err);
-      }
-    }
-
-    function updatePublicTenderInfo() {
-      const rfqId = document.getElementById('bidRfqSelect').value;
-      const r = globalRfqs.find(x => x.id === rfqId);
-      if (r) {
-        document.getElementById('dispMaterial').textContent = `${r.category} (${r.size})`;
-        document.getElementById('dispQty').textContent = `${r.quantity} Boxes`;
-      }
-    }
-
-    // --- SUBMIT LIVE SEALED BID ---
-    document.getElementById('supplierLiveBidForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const alertBox = document.getElementById('bidAlert');
-      const feedback = document.getElementById('bidFeedback');
-      const feedbackText = document.getElementById('bidFeedbackText');
-      alertBox.style.display = 'none';
-
-      const payload = {
-        rfq_id: document.getElementById('bidRfqSelect').value,
-        supplier_id: document.getElementById('bidSupplierSelect').value,
-        round_number: parseInt(document.getElementById('bidRound').value, 10),
-        rate_per_box: parseFloat(document.getElementById('bidRate').value),
-        lead_days: parseInt(document.getElementById('bidLead').value, 10),
-        breakage_pct: parseFloat(document.getElementById('bidBreakage').value),
-        remarks: document.getElementById('bidRemarks').value
-      };
-
-      try {
-        const res = await fetch('/api/negotiations/live-bid', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || 'Bid submission failed');
-        }
-
-        const data = await res.json();
-        feedback.style.display = 'block';
-        feedbackText.innerHTML = `
-          <strong>Quote:</strong> ₹${data.submitted_rate}/box | <strong>Buyer Counter:</strong> ₹${data.buyer_counter}/box<br>
-          <strong>Status:</strong> ${data.decision}
-        `;
-
-        if (payload.round_number < 3) {
-          document.getElementById('bidRound').value = (payload.round_number + 1).toString();
-        }
-      } catch (err) {
-        alertBox.className = 'alert-box error';
-        alertBox.textContent = err.message;
-        alertBox.style.display = 'block';
-      }
-    });
-
-    loadBiddingRoomData();
-    setInterval(loadBiddingRoomData, 4000);
   </script>
 </body>
 </html>

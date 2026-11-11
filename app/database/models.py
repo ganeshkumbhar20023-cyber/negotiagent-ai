@@ -1,12 +1,13 @@
 """
 SQLAlchemy Database Models
-Schema for RFQs, Suppliers, Negotiation Rounds, Purchase Orders, and Notifications.
+Schema for RFQs, Suppliers, Negotiation Sessions, Negotiation Rounds, Purchase Orders, and Notifications.
 """
 
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database.session import Base
+
 
 class RFQ(Base):
     __tablename__ = "rfqs"
@@ -21,13 +22,13 @@ class RFQ(Base):
     max_breakage = Column(Float, nullable=False)
     source_hub = Column(String(100), default="Regional Supply to Mudhal Titta Depot")
     status = Column(String(50), default="Evaluating Quotes")
-    
+
     # Priority weights
     weight_price = Column(Float, default=45.0)
     weight_quality = Column(Float, default=25.0)
     weight_delivery = Column(Float, default=20.0)
     weight_warranty = Column(Float, default=10.0)
-    
+
     created_at = Column(DateTime, default=datetime.utcnow)
 
     sessions = relationship("NegotiationSession", back_populates="rfq", cascade="all, delete-orphan")
@@ -38,8 +39,10 @@ class Supplier(Base):
     __tablename__ = "suppliers"
 
     id = Column(String(50), primary_key=True, index=True)
+    username = Column(String(50), unique=True, index=True, nullable=False)  # Supplier login username
+    password_hash = Column(String(100), nullable=False)                     # SHA-256 hashed password
     name = Column(String(150), nullable=False)
-    contact_number = Column(String(50), nullable=True)  # <-- ADD HERE
+    contact_number = Column(String(50), nullable=True)                      # WhatsApp / Mobile number
     hub_location = Column(String(150), nullable=False)
     base_price_per_box = Column(Float, nullable=False)
     min_walkaway_price = Column(Float, nullable=False)
@@ -49,6 +52,7 @@ class Supplier(Base):
     quality_score = Column(Float, nullable=False)
     reliability_score = Column(Float, nullable=False)
     agent_strategy = Column(String(50), default="balanced")
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class NegotiationSession(Base):
@@ -102,9 +106,14 @@ class PurchaseOrder(Base):
     total_amount = Column(Float, nullable=False)
     lead_days = Column(Integer, nullable=False)
     breakage_allowance_pct = Column(Float, nullable=False)
+    
+    # Settlement & Approval Tracking
     payment_status = Column(String(50), default="PENDING")
+    payment_method = Column(String(50), nullable=True)
+    transaction_ref = Column(String(100), nullable=True)
+    paid_at = Column(DateTime, nullable=True)
     approval_status = Column(String(50), default="APPROVED")
-    approver_name = Column(String(100), default="Ganesh G. Kumbhar (DYPCET)")
+    approver_name = Column(String(100), default="Mr. Vikram Gurav")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     rfq = relationship("RFQ", back_populates="purchase_orders")

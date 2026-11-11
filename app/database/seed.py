@@ -4,8 +4,15 @@ Populates initial tile/granite RFQs and authentic supplier agents
 for Shree Mahalaxmi Marbel and Granite, Mudhal Titta, Kolhapur.
 """
 
+import hashlib
 from app.database.session import SessionLocal, engine, Base
 from app.database.models import RFQ, Supplier
+
+
+def hash_password(password: str) -> str:
+    """Generates SHA-256 hash for supplier authentication."""
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
 
 def seed_database():
     Base.metadata.create_all(bind=engine)
@@ -68,12 +75,15 @@ def seed_database():
             db.commit()
             print(" -> Seeded 3 initial procurement RFQs into SQLite database.")
 
-        # 2. Seed Simulated Suppliers if table is empty
+        # 2. Seed Simulated Suppliers with Login Credentials if table is empty
         if db.query(Supplier).count() == 0:
             sample_suppliers = [
                 Supplier(
                     id="SUP-MORBI-01",
+                    username="morbi_ceramics",
+                    password_hash=hash_password("morbi@123"),
                     name="Morbi Ceramics Hub Direct",
+                    contact_number="+91 98250 12345",
                     hub_location="Morbi Industrial Area, Gujarat",
                     base_price_per_box=540.0,
                     min_walkaway_price=470.0,
@@ -86,7 +96,10 @@ def seed_database():
                 ),
                 Supplier(
                     id="SUP-KOLH-02",
+                    username="kolhapur_tiles",
+                    password_hash=hash_password("kolhapur@123"),
                     name="Kolhapur Regional Tiles & Granite Yard",
+                    contact_number="+91 98900 54321",
                     hub_location="MIDC Shiroli, Kolhapur",
                     base_price_per_box=575.0,
                     min_walkaway_price=510.0,
@@ -99,7 +112,10 @@ def seed_database():
                 ),
                 Supplier(
                     id="SUP-PUNE-03",
+                    username="pune_vitrified",
+                    password_hash=hash_password("pune@123"),
                     name="Maharashtra Bulk Vitrified Supply",
+                    contact_number="+91 98220 98765",
                     hub_location="MIDC Chakan, Pune",
                     base_price_per_box=525.0,
                     min_walkaway_price=460.0,

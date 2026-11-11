@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supplier Bidding Terminal | NegotiAgent AI</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background-color: #f1f5f9;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #0f172a;
+    }
+    .sup-header {
+      background-color: #0f172a;
+      color: white;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .lang-picker-sm {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      padding: 0.35rem 0.65rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      outline: none;
+    }
+    .btn-signout {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      padding: 0.4rem 0.85rem;
+      border-radius: 4px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.15s;
+    }
+    .btn-signout:hover { background: #fecaca; }
+    
+    .sup-container {
+      max-width: 1140px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: 1fr 1.35fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 880px) {
+      .sup-container { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      padding: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .rfq-item {
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 6px;
+      padding: 0.9rem;
+      margin-bottom: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: #ffffff;
+    }
+    .rfq-item:hover {
+      border-color: #2563eb;
+      background: #f8fafc;
+    }
+    .rfq-item.selected {
+      background-color: #eff6ff;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px #2563eb;
+    }
+
+    .form-group { margin-bottom: 0.85rem; text-align: left; }
+    .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
+    .form-control { width: 100%; padding: 0.65rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+    .form-control:focus { outline: none; border-color: #0f172a; box-shadow: 0 0 0 2px rgba(15,23,42,0.1); }
+    .btn-submit {
+      width: 100%;
+      padding: 0.85rem;
+      background: #d97706;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover { background: #b45309; }
+    .supplier-meta-badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      background: #e2e8f0;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #334155;
+      margin-top: 0.4rem;
+    }
+  </style>
+
+  <script>
+    // Enforce Secure Supplier Authentication
+    const currentSupplierId = sessionStorage.getItem('negotiagent_supplier_id');
+    if (!currentSupplierId) {
+      window.location.replace('/login.html');
+    }
+  </script>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <header class="sup-header">
+    <div>
+      <h2 style="margin:0; font-size:1.25rem;" data-i18n="supTitle">Supplier Bidding Terminal</h2>
+      <div style="font-size:0.85rem; color:#94a3b8;">
+        <span data-i18n="loggedAs">Authenticated Vendor:</span> 
+        <strong id="dispCompanyName" style="color:#fde68a;">--</strong>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <select id="langSelector" class="lang-picker-sm">
+        <option value="en">English (EN)</option>
+        <option value="hi">हिंदी (HI)</option>
+        <option value="mr">मराठी (MR)</option>
+      </select>
+      <button class="btn-signout" onclick="handleSupplierSignOut()" data-i18n="btnSignOut">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- MAIN VIEW -->
+  <main class="sup-container">
+
+    <!-- LEFT: ACTIVE BUYER CONSIGNMENTS -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:0.5rem; margin-bottom:0.75rem;">
+        <h3 style="margin:0; font-size:1.05rem;" data-i18n="tendersHead">📢 Active Consignment Demands</h3>
+        <span class="status-badge badge-info" id="tenderCountBadge">0 Active</span>
+      </div>
+      <p style="font-size:0.82rem; color:#64748b; margin-top:0;" data-i18n="tendersSub">
+        Demands posted by Shree Mahalaxmi Marbel and Granite. Tap any tender to submit your quote:
+      </p>
+
+      <div id="rfqListContainer">
+        <!-- Live RFQs injected via JS -->
+      </div>
+    </div>
+
+    <!-- RIGHT: LIVE SEALED BIDDING ROOM -->
+    <div class="card">
+      <h3 style="margin-top:0; font-size:1.05rem; border-bottom:1px solid #e2e8f0; padding-bottom:0.5rem;" data-i18n="bidRoomHead">
+        ⚡ Submit Sealed Quote
+      </h3>
+
+      <div id="bidAlert" class="alert-box" style="display:none; margin-bottom: 0.8rem;"></div>
+
+      <form id="supplierBidForm">
+        <div class="form-group">
+          <label data-i18n="lblTargetTender">Selected Consignment Tender:</label>
+          <input type="text" id="bidRfqDisplay" class="form-control" readonly style="background:#f8fafc; font-weight:700; color:#1e40af;">
+          <input type="hidden" id="bidRfqId">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.65rem;">
+          <div class="form-group">
+            <label data-i18n="lblAuctionRound">Auction Round</label>
+            <select id="bidRound" class="form-control">
+              <option value="1" data-i18n="optRound1">Round 1 (Opening Quote)</option>
+              <option value="2" data-i18n="optRound2">Round 2 (Concession Counter)</option>
+              <option value="3" data-i18n="optRound3">Round 3 (Final Offer)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label data-i18n="lblRate">Rate / Box (₹)</label>
+            <input type="number" id="bidRate" class="form-control" placeholder="e.g. 520" required>
+          </div>
+          <div class="form-group">
+            <label data-i18n="lblLead">Delivery Days (Lead)</label>
+            <input type="number" id="bidLead" class="form-control" value="4" required>
+          </div>
+          <div class="form-group">
+            <label data-i18n="lblBreakage">Max Breakage (%)</label>
+            <input type="number" id="bidBreakage" class="form-control" step="0.1" value="0.8" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label data-i18n="lblRemarks">Message / Notes to Proprietor</label>
+          <input type="text" id="bidRemarks" class="form-control" data-i18n-placeholder="phRemarks" placeholder="e.g. Ready stock at Shiroli yard, corner protection wrap included">
+        </div>
+
+        <button type="submit" id="btnSubmitBid" class="btn-submit" data-i18n="btnSubmitBid">🚀 Submit Sealed Bid to Buyer</button>
+      </form>
+
+      <!-- Feedback Area -->
+      <div id="bidFeedback" style="display:none; margin-top: 1rem; background: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 0.85rem;">
+        <div style="font-weight: 700; color: #065f46; font-size: 0.9rem;" data-i18n="feedbackTitle">Buyer Response Received:</div>
+        <div id="bidFeedbackText" style="font-size: 0.85rem; margin-top: 0.35rem; color: #047857; line-height:1.45;"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const supId = sessionStorage.getItem('negotiagent_supplier_id');
+    const supName = sessionStorage.getItem('negotiagent_supplier_name') || supId;
+    let currentLang = localStorage.getItem('negotiagent_lang') || 'en';
+    let rfqs = [];
+
+    document.getElementById('dispCompanyName').textContent = `${supName} (${supId})`;
+
+    // --- TRANSLATION DICTIONARY ---
+    const dict = {
+      en: {
+        supTitle: "Supplier Bidding Terminal",
+        loggedAs: "Authenticated Vendor:",
+        btnSignOut: "Sign Out",
+        tendersHead: "📢 Active Consignment Demands",
+        tendersSub: "Demands posted by Shree Mahalaxmi Marbel and Granite. Tap any tender to submit your quote:",
+        bidRoomHead: "⚡ Submit Sealed Quote",
+        lblTargetTender: "Selected Consignment Tender:",
+        lblAuctionRound: "Auction Round",
+        optRound1: "Round 1 (Opening Quote)",
+        optRound2: "Round 2 (Concession Counter)",
+        optRound3: "Round 3 (Final Offer)",
+        lblRate: "Rate / Box (₹)",
+        lblLead: "Delivery Days (Lead)",
+        lblBreakage: "Max Breakage (%)",
+        lblRemarks: "Message / Notes to Proprietor",
+        phRemarks: "e.g. Ready stock at Shiroli yard, corner protection wrap included",
+        btnSubmitBid: "🚀 Submit Sealed Bid to Buyer",
+        feedbackTitle: "Buyer Response Received:",
+        noRfqs: "No active buyer RFQs available right now.",
+        alertSelectTender: "Please select a tender from the left panel before submitting your bid."
+      },
+      hi: {
+        supTitle: "सप्लायर बिडिंग टर्मिनल",
+        loggedAs: "प्रमाणित सप्लायर:",
+        btnSignOut: "लॉग आउट",
+        tendersHead: "📢 सक्रिय माल मांग (Tenders)",
+        tendersSub: "श्री महालक्ष्मी मार्बल एंड ग्रेनाइट द्वारा जारी मांग। बोली लगाने के लिए किसी भी मांग पर क्लिक करें:",
+        bidRoomHead: "⚡ सीलबंद बोली (Quote) जमा करें",
+        lblTargetTender: "चयनित माल मांग:",
+        lblAuctionRound: "बिडिंग राउंड",
+        optRound1: "राउंड 1 (शुरुआती कोट)",
+        optRound2: "राउंड 2 (छूट एवं काउंटर ऑफर)",
+        optRound3: "राउंड 3 (अंतिम ऑफर)",
+        lblRate: "दर / बॉक्स (₹)",
+        lblLead: "डिलीवरी दिन",
+        lblBreakage: "अधिकतम टूट-फूट (%)",
+        lblRemarks: "मालिक को संदेश / टिप्पणी",
+        phRemarks: "उदा. माल तैयार है, सुरक्षित पैकिंग उपलब्ध",
+        btnSubmitBid: "🚀 खरीदार को बोली भेजें",
+        feedbackTitle: "खरीदार का जवाब प्राप्त हुआ:",
+        noRfqs: "वर्तमान में कोई सक्रिय मांग उपलब्ध नहीं है।",
+        alertSelectTender: "कृपया बोली लगाने से पहले बाईं ओर से एक मांग चुनें।"
+      },
+      mr: {
+        supTitle: "पुरवठादार बिडिंग टर्मिनल",
+        loggedAs: "नोंदणीकृत पुरवठादार:",
+        btnSignOut: "लॉग आउट करा",
+        tendersHead: "📢 सध्याची खरेदी मागणी (Tenders)",
+        tendersSub: "श्री महालक्ष्मी मार्बल अँड ग्रॅनाईटची मागणी. थेट दर पाठवण्यासाठी खालील मागणी निवडा:",
+        bidRoomHead: "⚡ थेट कोटेशन (बोली) पाठवा",
+        lblTargetTender: "निवडलेली खरेदी मागणी:",
+        lblAuctionRound: "बिडिंग फेरी",
+        optRound1: "फेरी १ (प्राथमिक कोट)",
+        optRound2: "फेरी २ (सवलत / काउंटर ऑफर)",
+        optRound3: "फेरी ३ (अंतिम ऑफर)",
+        lblRate: "दर / बॉक्स (₹)",
+        lblLead: "डिलिव्हरी दिवस",
+        lblBreakage: "कमाल तुटफूट (%)",
+        lblRemarks: "मालकास संदेश / टिप्पणी",
+        phRemarks: "उदा. शिरोली गोदामात माल उपलब्ध, पॅकिंगसह",
+        btnSubmitBid: "🚀 थेट मालकास बोली पाठवा",
+        feedbackTitle: "खरेदीदाराकडून काउंटर ऑफर प्राप्त:",
+        noRfqs: "सध्या कोणतीही खरेदी मागणी उपलब्ध नाही.",
+        alertSelectTender: "कृपया बोली लावण्यापूर्वी डाव्या बाजूने एक मागणी निवडा."
+      }
+    };
+
+    function applyTranslations(l) {
+      currentLang = l;
+      localStorage.setItem('negotiagent_lang', l);
+      const activeDict = dict[l] || dict.en;
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (activeDict[key]) el.textContent = activeDict[key];
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (activeDict[key]) el.placeholder = activeDict[key];
+      });
+    }
+
+    const langSelector = document.getElementById('langSelector');
+    langSelector.value = currentLang;
+    langSelector.addEventListener('change', (e) => applyTranslations(e.target.value));
+    applyTranslations(currentLang);
+
+    // --- SIGN OUT ---
+    function handleSupplierSignOut() {
+      sessionStorage.removeItem('negotiagent_supplier_id');
+      sessionStorage.removeItem('negotiagent_supplier_name');
+      window.location.replace('/login.html');
+    }
+
+    // --- LOAD RFQS ---
+    async function loadRfqs() {
+      try {
+        const res = await fetch('/api/rfqs');
+        if (res.ok) {
+          rfqs = await res.json();
+          renderRfqList();
+        }
+      } catch (e) {
+        console.error('Failed to load tenders:', e);
+      }
+    }
+
+    function renderRfqList() {
+      const container = document.getElementById('rfqListContainer');
+      const badge = document.getElementById('tenderCountBadge');
+      container.innerHTML = '';
+
+      if (badge) badge.textContent = `${rfqs.length} Active`;
+
+      if (rfqs.length === 0) {
+        container.innerHTML = `<div style="color:#64748b; font-size:0.85rem; padding:1.5rem; text-align:center;">${dict[currentLang].noRfqs}</div>`;
+        return;
+      }
+
+      const activeSelectedId = document.getElementById('bidRfqId').value;
+
+      rfqs.forEach((r, idx) => {
+        const isSelected = activeSelectedId ? (r.id === activeSelectedId) : (idx === 0);
+        const div = document.createElement('div');
+        div.className = 'rfq-item' + (isSelected ? ' selected' : '');
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <strong style="color:#1e40af; font-size:0.95rem;">${r.id} &mdash; ${r.category}</strong>
+            <span class="status-badge badge-warning" style="font-size:0.75rem;">${r.status || 'Active'}</span>
+          </div>
+          <div style="font-size:0.83rem; color:#475569; margin-top:0.35rem; line-height:1.45;">
+            Size: <strong>${r.size}</strong> | Demanded Quantity: <strong>${r.quantity} Units</strong><br>
+            Quality: <strong>${r.quality_grade || 'Standard'}</strong> | Deadline: <strong>${r.delivery_deadline || 'Prompt'}</strong>
+          </div>
+        `;
+        div.onclick = () => selectRfq(r, div);
+        container.appendChild(div);
+
+        if (isSelected && !activeSelectedId) {
+          selectRfq(r, div);
+        }
+      });
+    }
+
+    function selectRfq(r, el) {
+      document.querySelectorAll('.rfq-item').forEach(x => x.classList.remove('selected'));
+      el.classList.add('selected');
+
+      document.getElementById('bidRfqId').value = r.id;
+      document.getElementById('bidRfqDisplay').value = `${r.id} - ${r.category} (${r.quantity} Units)`;
+      document.getElementById('bidAlert').style.display = 'none';
+      document.getElementById('bidFeedback').style.display = 'none';
+    }
+
+    // --- SUBMIT SEALED BID ---
+    document.getElementById('supplierBidForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('bidAlert');
+      const feedback = document.getElementById('bidFeedback');
+      const feedbackText = document.getElementById('bidFeedbackText');
+      const btn = document.getElementById('btnSubmitBid');
+      alertBox.style.display = 'none';
+
+      const rfqId = document.getElementById('bidRfqId').value;
+      if (!rfqId) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = dict[currentLang].alertSelectTender;
+        alertBox.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Transmitting Bid...";
+
+      const payload = {
+        rfq_id: rfqId,
+        supplier_id: supId,
+        round_number: parseInt(document.getElementById('bidRound').value, 10),
+        rate_per_box: parseFloat(document.getElementById('bidRate').value),
+        lead_days: parseInt(document.getElementById('bidLead').value, 10),
+        breakage_pct: parseFloat(document.getElementById('bidBreakage').value),
+        remarks: document.getElementById('bidRemarks').value
+      };
+
+      try {
+        const res = await fetch('/api/negotiations/live-bid', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Bid submission failed');
+        }
+
+        const data = await res.json();
+        feedback.style.display = 'block';
+        feedbackText.innerHTML = `
+          <strong>Your Submitted Rate:</strong> ₹${data.submitted_rate}/box | 
+          <strong>Buyer Agent Counter:</strong> ₹${data.buyer_counter ? data.buyer_counter + '/box' : 'Under Review'}<br>
+          <strong>Outcome / Status:</strong> <span class="status-badge badge-success">${data.decision}</span>
+        `;
+
+        // Automatically advance round if counter-offered
+        if (payload.round_number < 3) {
+          document.getElementById('bidRound').value = (payload.round_number + 1).toString();
+        }
+
+      } catch (err) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = err.message;
+        alertBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = dict[currentLang].btnSubmitBid;
+      }
+    });
+
+    // Initial load and periodic refresh
+    loadRfqs();
+    setInterval(loadRfqs, 5000);
+  </script>
+</body>
+</html>

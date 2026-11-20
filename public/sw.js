@@ -7,13 +7,40 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Listen for incoming push payloads from server
+// Helper to display rich OS lock-screen notification
+function triggerConsignmentNotification(data) {
+  const title = data.title || '🚨 New Consignment Requirement Available!';
+  const options = {
+    body: data.body || 'Shree Mahalaxmi Marbel and Granite posted a new tender.',
+    icon: data.icon || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+    badge: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+    vibrate: [200, 100, 200, 100, 200],
+    tag: 'negotiagent-rfq-' + Date.now(),
+    renotify: true,
+    data: { url: data.url || '/supplier_dashboard.html' },
+    actions: [
+      { action: 'bid', title: '⚡ Submit Quote Now' },
+      { action: 'close', title: 'Dismiss' }
+    ]
+  };
+
+  return self.registration.showNotification(title, options);
+}
+
+// 1. Listen for real-time RFQ alerts posted from supplier_dashboard.html
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'NEW_RFQ_ALERT') {
+    event.waitUntil(triggerConsignmentNotification(event.data));
+  }
+});
+
+// 2. Listen for incoming push payloads from server
 self.addEventListener('push', (event) => {
   let data = {
     title: '🚨 New Consignment Requirement Available!',
     body: 'Shree Mahalaxmi Marbel and Granite posted a new tender.',
     icon: '/css/favicon.ico',
-    url: '/login.html'
+    url: '/supplier_dashboard.html'
   };
 
   if (event.data) {
@@ -24,32 +51,22 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const options = {
-    body: data.body,
-    icon: data.icon || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-    badge: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-    vibrate: [200, 100, 200, 100, 200],
-    data: { url: data.url || '/login.html' },
-    actions: [
-      { action: 'bid', title: '⚡ Submit Quote Now' },
-      { action: 'close', title: 'Dismiss' }
-    ]
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+  event.waitUntil(triggerConsignmentNotification(data));
 });
 
-// Click listener: opens the bidding room when tapped on lock screen
+// 3. Click listener: opens or focuses the supplier bidding terminal when tapped
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data ? event.notification.data.url : '/login.html';
+  if (event.action === 'close') return;
+
+  const targetUrl = (event.notification.data && event.notification.data.url)
+    ? event.notification.data.url
+    : '/supplier_dashboard.html';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (let client of windowClients) {
-        if (client.url.includes('login.html') && 'focus' in client) {
+      for (const client of windowClients) {
+        if ((client.url.includes('supplier_dashboard.html') || client.url.includes('login.html')) && 'focus' in client) {
           return client.focus();
         }
       }

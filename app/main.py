@@ -5,7 +5,7 @@ Serves static frontend assets, API routes, and handles gateway redirects.
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
@@ -47,24 +47,43 @@ app.include_router(report_router)
 # Mount public directory for HTML/CSS/JS frontend
 public_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public")
 if os.path.exists(public_path):
-    app.mount("/css", StaticFiles(directory=os.path.join(public_path, "css")), name="css")
-    app.mount("/js", StaticFiles(directory=os.path.join(public_path, "js")), name="js")
+    css_dir = os.path.join(public_path, "css")
+    js_dir = os.path.join(public_path, "js")
+    if os.path.exists(css_dir):
+        app.mount("/css", StaticFiles(directory=css_dir), name="css")
+    if os.path.exists(js_dir):
+        app.mount("/js", StaticFiles(directory=js_dir), name="js")
     app.mount("/public", StaticFiles(directory=public_path), name="public")
+
 
 @app.get("/", include_in_schema=False)
 def root():
     """Redirect initial visitors directly to the unified login and supplier gateway."""
     return RedirectResponse(url="/login.html")
 
+
 @app.get("/login.html", include_in_schema=False)
 def get_login_page():
-    from fastapi.responses import FileResponse
     return FileResponse(os.path.join(public_path, "login.html"))
+
 
 @app.get("/index.html", include_in_schema=False)
 def get_dashboard_page():
-    from fastapi.responses import FileResponse
     return FileResponse(os.path.join(public_path, "index.html"))
+
+
+@app.get("/supplier_dashboard.html", include_in_schema=False)
+def get_supplier_dashboard_page():
+    return FileResponse(os.path.join(public_path, "supplier_dashboard.html"))
+
+
+@app.get("/sw.js", include_in_schema=False)
+def get_service_worker():
+    return FileResponse(
+        os.path.join(public_path, "sw.js"),
+        media_type="application/javascript"
+    )
+
 
 @app.get("/api/health")
 def health_check():

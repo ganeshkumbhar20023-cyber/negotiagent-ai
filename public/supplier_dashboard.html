@@ -6,7 +6,7 @@
   <title>Supplier Bidding Terminal | NegotiAgent AI</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-- { box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
       background-color: #f1f5f9;
       margin: 0;
@@ -27,7 +27,19 @@
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      flex-wrap: wrap;
     }
+    .btn-alert-toggle {
+      background: #1d4ed8;
+      color: #ffffff;
+      border: 1px solid #3b82f6;
+      padding: 0.38rem 0.75rem;
+      border-radius: 4px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+    .btn-alert-toggle:hover { background: #1e40af; }
     .lang-picker-sm {
       background: #1e293b;
       color: #f8fafc;
@@ -50,10 +62,31 @@
       transition: background 0.15s;
     }
     .btn-signout:hover { background: #fecaca; }
-    
+
+    .toast-banner {
+      max-width: 1140px;
+      margin: 0.85rem auto 0;
+      padding: 0 1rem;
+      display: none;
+    }
+    .toast-inner {
+      background: #eff6ff;
+      border: 1px solid #2563eb;
+      border-left: 5px solid #1d4ed8;
+      color: #1e3a8a;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
     .sup-container {
       max-width: 1140px;
-      margin: 1.5rem auto;
+      margin: 1.25rem auto 1.5rem;
       padding: 0 1rem;
       display: grid;
       grid-template-columns: 1fr 1.35fr;
@@ -107,16 +140,6 @@
       transition: background 0.2s;
     }
     .btn-submit:hover { background: #b45309; }
-    .supplier-meta-badge {
-      display: inline-block;
-      padding: 0.25rem 0.6rem;
-      background: #e2e8f0;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #334155;
-      margin-top: 0.4rem;
-    }
   </style>
 
   <script>
@@ -134,20 +157,29 @@
     <div>
       <h2 style="margin:0; font-size:1.25rem;" data-i18n="supTitle">Supplier Bidding Terminal</h2>
       <div style="font-size:0.85rem; color:#94a3b8;">
-        <span data-i18n="loggedAs">Authenticated Vendor:</span> 
+        <span data-i18n="loggedAs">Authenticated Vendor:</span>
         <strong id="dispCompanyName" style="color:#fde68a;">--</strong>
       </div>
     </div>
 
     <div class="header-right">
+      <button type="button" id="btnEnableLiveAlerts" class="btn-alert-toggle">🔔 Enable Alerts</button>
       <select id="langSelector" class="lang-picker-sm">
         <option value="en">English (EN)</option>
         <option value="hi">हिंदी (HI)</option>
         <option value="mr">मराठी (MR)</option>
       </select>
-      <button class="btn-signout" onclick="handleSupplierSignOut()" data-i18n="btnSignOut">Sign Out</button>
+      <button type="button" class="btn-signout" onclick="handleSupplierSignOut()" data-i18n="btnSignOut">Sign Out</button>
     </div>
   </header>
+
+  <!-- IN-APP CONSIGNMENT TOAST BANNER -->
+  <div id="liveTenderToast" class="toast-banner" role="status" aria-live="polite">
+    <div class="toast-inner">
+      <span id="liveTenderToastText">New consignment demand available.</span>
+      <button type="button" onclick="dismissTenderToast()" style="background:none; border:none; font-size:1.1rem; cursor:pointer; color:#1e3a8a;">&times;</button>
+    </div>
+  </div>
 
   <!-- MAIN VIEW -->
   <main class="sup-container">
@@ -193,15 +225,19 @@
           </div>
           <div class="form-group">
             <label data-i18n="lblRate">Rate / Box (₹)</label>
-            <input type="number" id="bidRate" class="form-control" placeholder="e.g. 520" required>
+            <input type="number" id="bidRate" class="form-control" placeholder="e.g. 520" step="0.5" required>
+          </div>
+          <div class="form-group">
+            <label data-i18n="lblWalkaway">Bottom Margin / Floor (₹ / Box)</label>
+            <input type="number" id="bidWalkaway" class="form-control" placeholder="e.g. 480" step="0.5">
           </div>
           <div class="form-group">
             <label data-i18n="lblLead">Delivery Days (Lead)</label>
-            <input type="number" id="bidLead" class="form-control" value="4" required>
+            <input type="number" id="bidLead" class="form-control" value="4" min="1" required>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="grid-column: span 2;">
             <label data-i18n="lblBreakage">Max Breakage (%)</label>
-            <input type="number" id="bidBreakage" class="form-control" step="0.1" value="0.8" required>
+            <input type="number" id="bidBreakage" class="form-control" step="0.1" min="0" max="10" value="0.8" required>
           </div>
         </div>
 
@@ -227,8 +263,56 @@
     const supName = sessionStorage.getItem('negotiagent_supplier_name') || supId;
     let currentLang = localStorage.getItem('negotiagent_lang') || 'en';
     let rfqs = [];
+    let knownRfqIds = new Set();
 
     document.getElementById('dispCompanyName').textContent = `${supName} (${supId})`;
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js?v=4').catch(() => {});
+    }
+
+    const btnEnableAlerts = document.getElementById('btnEnableLiveAlerts');
+    function syncAlertButtonLabel() {
+      if (!('Notification' in window)) {
+        btnEnableAlerts.style.display = 'none';
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        btnEnableAlerts.textContent = '✅ Alerts Enabled';
+      } else {
+        btnEnableAlerts.textContent = '🔔 Enable Alerts';
+      }
+    }
+    syncAlertButtonLabel();
+
+    btnEnableAlerts.addEventListener('click', async () => {
+      if (!('Notification' in window)) return;
+      const perm = await Notification.requestPermission();
+      syncAlertButtonLabel();
+      if (perm === 'granted') {
+        showTenderToast('Live consignment alerts are enabled for your browser.');
+      }
+    });
+
+    function showTenderToast(message) {
+      const box = document.getElementById('liveTenderToast');
+      const txt = document.getElementById('liveTenderToastText');
+      txt.textContent = message;
+      box.style.display = 'block';
+    }
+
+    function dismissTenderToast() {
+      document.getElementById('liveTenderToast').style.display = 'none';
+    }
+
+    function triggerBrowserNotification(title, body) {
+      showTenderToast(`${title} — ${body}`);
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification(title, { body, icon: '/css/favicon.ico' });
+        } catch (_) {}
+      }
+    }
 
     // --- TRANSLATION DICTIONARY ---
     const dict = {
@@ -245,6 +329,7 @@
         optRound2: "Round 2 (Concession Counter)",
         optRound3: "Round 3 (Final Offer)",
         lblRate: "Rate / Box (₹)",
+        lblWalkaway: "Bottom Margin / Floor (₹ / Box)",
         lblLead: "Delivery Days (Lead)",
         lblBreakage: "Max Breakage (%)",
         lblRemarks: "Message / Notes to Proprietor",
@@ -267,6 +352,7 @@
         optRound2: "राउंड 2 (छूट एवं काउंटर ऑफर)",
         optRound3: "राउंड 3 (अंतिम ऑफर)",
         lblRate: "दर / बॉक्स (₹)",
+        lblWalkaway: "न्यूनतम स्वीकार्य दर / फ्लोर (₹ / बॉक्स)",
         lblLead: "डिलीवरी दिन",
         lblBreakage: "अधिकतम टूट-फूट (%)",
         lblRemarks: "मालिक को संदेश / टिप्पणी",
@@ -289,6 +375,7 @@
         optRound2: "फेरी २ (सवलत / काउंटर ऑफर)",
         optRound3: "फेरी ३ (अंतिम ऑफर)",
         lblRate: "दर / बॉक्स (₹)",
+        lblWalkaway: "किमान अंतिम दर / फ्लोर (₹ / बॉक्स)",
         lblLead: "डिलिव्हरी दिवस",
         lblBreakage: "कमाल तुटफूट (%)",
         lblRemarks: "मालकास संदेश / टिप्पणी",
@@ -333,7 +420,19 @@
       try {
         const res = await fetch('/api/rfqs');
         if (res.ok) {
-          rfqs = await res.json();
+          const incoming = await res.json();
+          if (knownRfqIds.size > 0) {
+            incoming.forEach(item => {
+              if (!knownRfqIds.has(item.id)) {
+                triggerBrowserNotification(
+                  `New Consignment: ${item.id}`,
+                  `${item.category} (${item.quantity} units) posted for bidding.`
+                );
+              }
+            });
+          }
+          knownRfqIds = new Set(incoming.map(item => item.id));
+          rfqs = incoming;
           renderRfqList();
         }
       } catch (e) {
@@ -405,6 +504,9 @@
         return;
       }
 
+      const rawWalkaway = document.getElementById('bidWalkaway').value.trim();
+      const walkawayVal = rawWalkaway !== '' ? parseFloat(rawWalkaway) : null;
+
       btn.disabled = true;
       btn.textContent = "Transmitting Bid...";
 
@@ -413,6 +515,7 @@
         supplier_id: supId,
         round_number: parseInt(document.getElementById('bidRound').value, 10),
         rate_per_box: parseFloat(document.getElementById('bidRate').value),
+        walkaway_price: Number.isFinite(walkawayVal) ? walkawayVal : null,
         lead_days: parseInt(document.getElementById('bidLead').value, 10),
         breakage_pct: parseFloat(document.getElementById('bidBreakage').value),
         remarks: document.getElementById('bidRemarks').value
@@ -431,18 +534,18 @@
         }
 
         const data = await res.json();
+        const floorDisplay = data.walkaway_price != null ? `₹${data.walkaway_price}/box` : 'Not set';
         feedback.style.display = 'block';
         feedbackText.innerHTML = `
-          <strong>Your Submitted Rate:</strong> ₹${data.submitted_rate}/box | 
+          <strong>Your Submitted Rate:</strong> ₹${data.submitted_rate}/box |
+          <strong>Bottom Margin Floor:</strong> ${floorDisplay} |
           <strong>Buyer Agent Counter:</strong> ₹${data.buyer_counter ? data.buyer_counter + '/box' : 'Under Review'}<br>
           <strong>Outcome / Status:</strong> <span class="status-badge badge-success">${data.decision}</span>
         `;
 
-        // Automatically advance round if counter-offered
         if (payload.round_number < 3) {
           document.getElementById('bidRound').value = (payload.round_number + 1).toString();
         }
-
       } catch (err) {
         alertBox.className = 'alert-box error';
         alertBox.textContent = err.message;
@@ -453,7 +556,6 @@
       }
     });
 
-    // Initial load and periodic refresh
     loadRfqs();
     setInterval(loadRfqs, 5000);
   </script>

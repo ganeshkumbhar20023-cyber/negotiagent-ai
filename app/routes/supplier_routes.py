@@ -21,8 +21,9 @@ DEFAULT_SIMULATED_SUPPLIERS = [
         "base_price_per_box": 540.0,
         "min_walkaway_price": 475.0,
         "quality_score": 91.0,
-        "delivery_lead_days": 7,
-        "breakage_pct": 1.2,
+        "standard_lead_days": 7,
+        "min_lead_days": 4,
+        "offered_breakage_pct": 1.2,
     },
     {
         "id": "SUP-SHIROLI-02",
@@ -30,8 +31,9 @@ DEFAULT_SIMULATED_SUPPLIERS = [
         "base_price_per_box": 555.0,
         "min_walkaway_price": 490.0,
         "quality_score": 89.0,
-        "delivery_lead_days": 2,
-        "breakage_pct": 0.6,
+        "standard_lead_days": 2,
+        "min_lead_days": 1,
+        "offered_breakage_pct": 0.6,
     },
     {
         "id": "SUP-UDAIPUR-03",
@@ -39,8 +41,9 @@ DEFAULT_SIMULATED_SUPPLIERS = [
         "base_price_per_box": 565.0,
         "min_walkaway_price": 495.0,
         "quality_score": 94.0,
-        "delivery_lead_days": 8,
-        "breakage_pct": 1.0,
+        "standard_lead_days": 8,
+        "min_lead_days": 5,
+        "offered_breakage_pct": 1.0,
     },
 ]
 
@@ -52,21 +55,21 @@ class SupplierCreateRequest(BaseModel):
         default=None,
         validation_alias=AliasChoices("id", "supplier_id", "username", "choose_username")
     )
-    name: str = Field(
-        validation_alias=AliasChoices("name", "company_name", "company", "depot_name", "company_depot_name")
-    )
     username: Optional[str] = None
     password: Optional[str] = Field(
         default="supplier123",
         validation_alias=AliasChoices("password", "create_password")
     )
+    name: str = Field(
+        validation_alias=AliasChoices("name", "company_name", "company", "depot_name", "company_depot_name")
+    )
     phone: Optional[str] = Field(
         default="",
-        validation_alias=AliasChoices("phone", "contact", "whatsapp", "supplier_contact")
+        validation_alias=AliasChoices("phone", "contact_number", "contact", "whatsapp", "supplier_contact")
     )
     location: Optional[str] = Field(
         default="Kolhapur Hub",
-        validation_alias=AliasChoices("location", "hub", "depot_hub", "manufacturing_hub")
+        validation_alias=AliasChoices("location", "hub_location", "hub", "depot_hub", "manufacturing_hub")
     )
     base_price_per_box: float = Field(
         default=540.0,
@@ -78,19 +81,24 @@ class SupplierCreateRequest(BaseModel):
         gt=0,
         validation_alias=AliasChoices("min_walkaway_price", "bottom_margin", "walkaway_price", "min_price")
     )
-    delivery_lead_days: int = Field(
+    standard_lead_days: int = Field(
         default=4,
         ge=1,
-        validation_alias=AliasChoices("delivery_lead_days", "lead_days", "standard_lead_days", "lead")
+        validation_alias=AliasChoices("standard_lead_days", "delivery_lead_days", "lead_days", "lead")
     )
-    breakage_pct: float = Field(
+    min_lead_days: Optional[int] = Field(default=None, ge=1)
+    offered_breakage_pct: float = Field(
         default=0.8,
         ge=0.0,
         le=25.0,
-        validation_alias=AliasChoices("breakage_pct", "breakage_guarantee", "breakage")
+        validation_alias=AliasChoices("offered_breakage_pct", "breakage_pct", "breakage_guarantee", "breakage")
     )
-    quality_score: float = Field(default=90.0, ge=0.0, le=100.0)
-    strategy: Optional[str] = "balanced"
+    quality_score: float = Field(default=92.0, ge=0.0, le=100.0)
+    reliability_score: float = Field(default=90.0, ge=0.0, le=100.0)
+    strategy: Optional[str] = Field(
+        default="balanced",
+        validation_alias=AliasChoices("strategy", "agent_strategy")
+    )
 
 
 class SupplierLoginRequest(BaseModel):
@@ -104,22 +112,64 @@ def _hash_password(raw: str) -> str:
     return hashlib.sha256((raw or "").encode("utf-8")).hexdigest()
 
 
+def _model_columns() -> set:
+    return set(Supplier.__table__.columns.keys())
+
+
+def _build_supplier_instance(values: dict) -> Supplier:
+    cols = _model_columns()
+    clean_kwargs = {k: v for k, v in values.items() if k in cols and v is not None}
+    return Supplier(**clean_kwargs)
+
+
 def _serialize_supplier(s: Supplier) -> dict:
+    lead_val = (
+        getattr(s, "standard_lead_days", None)
+        if getattr(s, "standard_lead_days", None) is not None
+        else getattr(s, "delivery_lead_days", 4)
+    )
+    breakage_val = (
+        getattr(s, "offered_breakage_pct", None)
+        if getattr(s, "offered_breakage_pct", None) is not None
+        else getattr(s, "breakage_pct", 0.8)
+    )
+    loc_val = (
+        getattr(s, "hub_location", None)
+        or getattr(s, "location", None)
+        or "Kolhapur Hub"
+    )
+    phone_val = (
+        getattr(s, "contact_number", None)
+        or getattr(s, "phone", None)
+        or ""
+    )
+    strat_val = (
+        getattr(s, "agent_strategy", None)
+        or getattr(s, "strategy", None)
+        or "balanced"
+    )
+
     return {
         "id": s.id,
         "username": getattr(s, "username", None) or s.id,
         "name": s.name,
         "company_name": s.name,
-        "phone": getattr(s, "phone", None) or "",
-        "location": getattr(s, "location", None) or "Kolhapur Hub",
+        "phone": phone_val,
+        "contact_number": phone_val,
+        "location": loc_val,
+        "hub_location": loc_val,
         "base_price_per_box": float(getattr(s, "base_price_per_box", 540.0) or 540.0),
         "list_quote": float(getattr(s, "base_price_per_box", 540.0) or 540.0),
         "min_walkaway_price": float(getattr(s, "min_walkaway_price", 480.0) or 480.0),
         "bottom_margin": float(getattr(s, "min_walkaway_price", 480.0) or 480.0),
-        "delivery_lead_days": int(getattr(s, "delivery_lead_days", 4) or 4),
-        "breakage_pct": float(getattr(s, "breakage_pct", 0.8) or 0.8),
-        "quality_score": float(getattr(s, "quality_score", 90.0) or 90.0),
-        "strategy": getattr(s, "strategy", None) or "balanced",
+        "standard_lead_days": int(lead_val or 4),
+        "delivery_lead_days": int(lead_val or 4),
+        "offered_breakage_pct": float(breakage_val if breakage_val is not None else 0.8),
+        "breakage_pct": float(breakage_val if breakage_val is not None else 0.8),
+        "quality_score": float(getattr(s, "quality_score", 92.0) or 92.0),
+        "reliability_score": float(getattr(s, "reliability_score", 90.0) or 90.0),
+        "strategy": strat_val,
+        "agent_strategy": strat_val,
     }
 
 
@@ -130,17 +180,20 @@ def _ensure_simulated_suppliers(db: Session) -> List[Supplier]:
 
     created_rows = []
     for item in DEFAULT_SIMULATED_SUPPLIERS:
-        row = Supplier(
-            id=item["id"],
-            name=item["name"],
-            base_price_per_box=item["base_price_per_box"],
-            min_walkaway_price=item["min_walkaway_price"],
-            quality_score=item["quality_score"],
-            delivery_lead_days=item["delivery_lead_days"],
-            breakage_pct=item["breakage_pct"],
-        )
-        if hasattr(row, "password_hash"):
-            row.password_hash = _hash_password("supplier123")
+        row = _build_supplier_instance({
+            "id": item["id"],
+            "username": item["id"],
+            "name": item["name"],
+            "password_hash": _hash_password("supplier123"),
+            "base_price_per_box": item["base_price_per_box"],
+            "min_walkaway_price": item["min_walkaway_price"],
+            "quality_score": item["quality_score"],
+            "reliability_score": 90.0,
+            "standard_lead_days": item["standard_lead_days"],
+            "min_lead_days": item["min_lead_days"],
+            "offered_breakage_pct": item["offered_breakage_pct"],
+            "agent_strategy": "balanced",
+        })
         db.add(row)
         created_rows.append(row)
 
@@ -152,13 +205,13 @@ def _ensure_simulated_suppliers(db: Session) -> List[Supplier]:
 
 def _generate_supplier_id(raw_id: Optional[str], name: str, db: Session) -> str:
     seed_text = (raw_id or "").strip() or name
-    slug = re.sub(r"[^A-Za-z0-9]+", "", seed_text).upper()[:8] or "SUP"
-    base_id = slug if slug.startswith("SUP") else f"SUP-{slug}"
-    candidate = base_id
+    slug = re.sub(r"[^A-Za-z0-9]+", "", seed_text).upper()[:10] or "SUP"
+    base = slug if slug.startswith("SUP") else f"SUP-{slug}"
+    candidate = base
     counter = 1
     while db.query(Supplier).filter(Supplier.id == candidate).first() is not None:
         counter += 1
-        candidate = f"{base_id}-{counter}"
+        candidate = f"{base}-{counter}"
     return candidate
 
 
@@ -193,27 +246,28 @@ def register_supplier(payload: SupplierCreateRequest, db: Session = Depends(get_
         )
 
     supplier_id = _generate_supplier_id(payload.id or payload.username, clean_name, db)
+    clean_user = (payload.username or payload.id or supplier_id).strip()
+    min_lead = payload.min_lead_days if payload.min_lead_days is not None else max(1, payload.standard_lead_days - 2)
 
-    new_supplier = Supplier(
-        id=supplier_id,
-        name=clean_name,
-        base_price_per_box=float(payload.base_price_per_box),
-        min_walkaway_price=float(payload.min_walkaway_price),
-        quality_score=float(payload.quality_score),
-        delivery_lead_days=int(payload.delivery_lead_days),
-        breakage_pct=float(payload.breakage_pct),
-    )
-
-    if hasattr(new_supplier, "username"):
-        new_supplier.username = (payload.username or payload.id or supplier_id).strip()
-    if hasattr(new_supplier, "phone") and payload.phone:
-        new_supplier.phone = payload.phone.strip()
-    if hasattr(new_supplier, "location") and payload.location:
-        new_supplier.location = payload.location.strip()
-    if hasattr(new_supplier, "strategy") and payload.strategy:
-        new_supplier.strategy = payload.strategy.strip()
-    if hasattr(new_supplier, "password_hash"):
-        new_supplier.password_hash = _hash_password(payload.password or "supplier123")
+    new_supplier = _build_supplier_instance({
+        "id": supplier_id,
+        "username": clean_user,
+        "name": clean_name,
+        "password_hash": _hash_password(payload.password or "supplier123"),
+        "password": payload.password or "supplier123",
+        "phone": (payload.phone or "").strip(),
+        "contact_number": (payload.phone or "").strip(),
+        "location": (payload.location or "Kolhapur Hub").strip(),
+        "hub_location": (payload.location or "Kolhapur Hub").strip(),
+        "base_price_per_box": float(payload.base_price_per_box),
+        "min_walkaway_price": float(payload.min_walkaway_price),
+        "quality_score": float(payload.quality_score),
+        "reliability_score": float(payload.reliability_score),
+        "standard_lead_days": int(payload.standard_lead_days),
+        "min_lead_days": int(min_lead),
+        "offered_breakage_pct": float(payload.offered_breakage_pct),
+        "agent_strategy": payload.strategy or "balanced",
+    })
 
     db.add(new_supplier)
     db.commit()
@@ -222,7 +276,7 @@ def register_supplier(payload: SupplierCreateRequest, db: Session = Depends(get_
     serialized = _serialize_supplier(new_supplier)
     return {
         "status": "registered",
-        "message": f"Registered '{new_supplier.name}' successfully! Login ID / Username: {new_supplier.id}",
+        "message": f"Registered '{new_supplier.name}' successfully! Supplier ID: {new_supplier.id}",
         "supplier_id": new_supplier.id,
         "supplier": serialized,
         **serialized,
@@ -251,7 +305,9 @@ def login_supplier(payload: SupplierLoginRequest, db: Session = Depends(get_db))
         if _hash_password(payload.password) != stored_hash:
             raise HTTPException(status_code=401, detail="Invalid supplier credentials.")
 
+    serialized = _serialize_supplier(supplier)
     return {
         "status": "authenticated",
-        "supplier": _serialize_supplier(supplier),
+        "supplier": serialized,
+        **serialized,
     }

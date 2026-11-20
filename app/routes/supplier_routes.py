@@ -257,7 +257,12 @@ def submit_live_supplier_bid(payload: LiveSupplierBidRequest, db: Session = Depe
         session.status = "completed"
         session.recommended_supplier_id = payload.supplier_id
         session.final_price = round(payload.rate_per_box * rfq.quantity, 2)
-        initial_cost = (supplier.base_price_per_box * rfq.quantity) if supplier else rfq.budget_ceiling
+        base_rate = (
+            supplier.base_price_per_box
+            if supplier and getattr(supplier, "base_price_per_box", None) is not None
+            else payload.rate_per_box
+        )
+        initial_cost = base_rate * rfq.quantity
         session.savings_amount = max(0.0, round(initial_cost - session.final_price, 2))
         session.explanation_summary = (
             f"Consignment awarded to {supplier_name} at ₹{payload.rate_per_box}/box "

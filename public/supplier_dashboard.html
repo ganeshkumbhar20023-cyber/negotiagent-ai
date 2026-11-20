@@ -234,22 +234,28 @@
             </select>
           </div>
           <div class="form-group">
-            <label data-i18n="lblRate">Rate / Box (₹)</label>
-            <input type="number" id="bidRate" class="form-control" placeholder="e.g. 520" required>
+            <label data-i18n="lblRate">Opening Rate / Box (₹)</label>
+            <input type="number" id="bidRate" class="form-control" placeholder="e.g. 535" required>
+          </div>
+          <div class="form-group">
+            <label data-i18n="lblWalkaway">Bottom Margin / Floor (₹)</label>
+            <input type="number" id="bidWalkaway" class="form-control" placeholder="e.g. 485" required>
           </div>
           <div class="form-group">
             <label data-i18n="lblLead">Delivery Days (Lead)</label>
             <input type="number" id="bidLead" class="form-control" value="4" required>
           </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:0.65rem;">
           <div class="form-group">
             <label data-i18n="lblBreakage">Max Breakage (%)</label>
             <input type="number" id="bidBreakage" class="form-control" step="0.1" value="0.8" required>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label data-i18n="lblRemarks">Message / Notes to Proprietor</label>
-          <input type="text" id="bidRemarks" class="form-control" data-i18n-placeholder="phRemarks" placeholder="e.g. Ready stock at Shiroli yard, corner protection wrap included">
+          <div class="form-group">
+            <label data-i18n="lblRemarks">Message / Notes to Proprietor</label>
+            <input type="text" id="bidRemarks" class="form-control" data-i18n-placeholder="phRemarks" placeholder="e.g. Ready stock at Shiroli yard, corner protection wrap included">
+          </div>
         </div>
 
         <button type="submit" id="btnSubmitBid" class="btn-submit" data-i18n="btnSubmitBid">🚀 Submit Sealed Bid to Buyer</button>
@@ -386,7 +392,8 @@
         optRound1: "Round 1 (Opening Quote)",
         optRound2: "Round 2 (Concession Counter)",
         optRound3: "Round 3 (Final Offer)",
-        lblRate: "Rate / Box (₹)",
+        lblRate: "Opening Rate / Box (₹)",
+        lblWalkaway: "Bottom Margin / Floor (₹)",
         lblLead: "Delivery Days (Lead)",
         lblBreakage: "Max Breakage (%)",
         lblRemarks: "Message / Notes to Proprietor",
@@ -410,7 +417,8 @@
         optRound1: "राउंड 1 (शुरुआती कोट)",
         optRound2: "राउंड 2 (छूट एवं काउंटर ऑफर)",
         optRound3: "राउंड 3 (अंतिम ऑफर)",
-        lblRate: "दर / बॉक्स (₹)",
+        lblRate: "शुरुआती दर / बॉक्स (₹)",
+        lblWalkaway: "न्यूनतम बॉटम मार्जिन (₹)",
         lblLead: "डिलीवरी दिन",
         lblBreakage: "अधिकतम टूट-फूट (%)",
         lblRemarks: "मालिक को संदेश / टिप्पणी",
@@ -434,7 +442,8 @@
         optRound1: "फेरी १ (प्राथमिक कोट)",
         optRound2: "फेरी २ (सवलत / काउंटर ऑफर)",
         optRound3: "फेरी ३ (अंतिम ऑफर)",
-        lblRate: "दर / बॉक्स (₹)",
+        lblRate: "प्राथमिक दर / बॉक्स (₹)",
+        lblWalkaway: "किमान बॉटम मार्जिन (₹)",
         lblLead: "डिलिव्हरी दिवस",
         lblBreakage: "कमाल तुटफूट (%)",
         lblRemarks: "मालकास संदेश / टिप्पणी",
@@ -566,6 +575,16 @@
         return;
       }
 
+      const rateVal = parseFloat(document.getElementById('bidRate').value);
+      const walkawayVal = parseFloat(document.getElementById('bidWalkaway').value);
+
+      if (walkawayVal > rateVal) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = "Bottom Margin / Floor cannot exceed your Opening Rate.";
+        alertBox.style.display = 'block';
+        return;
+      }
+
       btn.disabled = true;
       btn.textContent = "Transmitting Bid...";
 
@@ -573,7 +592,8 @@
         rfq_id: rfqId,
         supplier_id: supId,
         round_number: parseInt(document.getElementById('bidRound').value, 10),
-        rate_per_box: parseFloat(document.getElementById('bidRate').value),
+        rate_per_box: rateVal,
+        walkaway_price: walkawayVal,
         lead_days: parseInt(document.getElementById('bidLead').value, 10),
         breakage_pct: parseFloat(document.getElementById('bidBreakage').value),
         remarks: document.getElementById('bidRemarks').value
@@ -594,7 +614,7 @@
         const data = await res.json();
         feedback.style.display = 'block';
         feedbackText.innerHTML = `
-          <strong>Your Submitted Rate:</strong> ₹${data.submitted_rate}/box | 
+          <strong>Your Submitted Rate:</strong> ₹${data.submitted_rate}/box (Floor: ₹${walkawayVal}/box) | 
           <strong>Buyer Agent Counter:</strong> ₹${data.buyer_counter ? data.buyer_counter + '/box' : 'Under Review'}<br>
           <strong>Outcome / Status:</strong> <span class="status-badge badge-success">${data.decision}</span>
         `;

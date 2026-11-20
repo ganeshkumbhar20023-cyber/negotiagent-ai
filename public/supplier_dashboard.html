@@ -187,7 +187,7 @@
 
   <!-- LIVE IN-APP NEW RFQ BANNER -->
   <div id="liveRfqToast" class="live-rfq-toast">
-    <span id="liveRfqToastText">🚨 New Consignment Requirement Published!</span>
+    <span id="liveRfqToastText">New Consignment Requirement Published!</span>
     <button onclick="document.getElementById('liveRfqToast').style.display='none'" style="background:none; border:none; font-weight:bold; cursor:pointer; color:#1e3a8a;">✕</button>
   </div>
 
@@ -269,12 +269,37 @@
     const supName = sessionStorage.getItem('negotiagent_supplier_name') || supId;
     let currentLang = localStorage.getItem('negotiagent_lang') || 'en';
     let rfqs = [];
+    let swRegistration = null;
 
     document.getElementById('dispCompanyName').textContent = `${supName} (${supId})`;
 
-    // --- SERVICE WORKER & PUSH NOTIFICATIONS ---
+    // --- SERVICE WORKER & BULLETPROOF PUSH NOTIFICATIONS ---
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(console.error);
+      navigator.serviceWorker.register('/sw.js?v=3')
+        .then((reg) => {
+          swRegistration = reg;
+          reg.update();
+        })
+        .catch(console.error);
+    }
+
+    async function showSystemNotification(title, body) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      const options = {
+        body: body,
+        vibrate: [300, 100, 300],
+        tag: 'negotiagent-rfq-' + Date.now(),
+        renotify: true,
+        data: { url: '/supplier_dashboard.html' }
+      };
+
+      try {
+        const reg = swRegistration || await navigator.serviceWorker.ready;
+        await reg.showNotification(title, options);
+      } catch (err) {
+        new Notification(title, options);
+      }
     }
 
     function updateAlertButtonState() {
@@ -291,22 +316,20 @@
 
     async function enableSupplierPushAlerts() {
       if (!('Notification' in window)) {
-        alert('This browser does not support desktop/mobile push notifications.');
+        alert('This browser does not support notifications.');
         return;
       }
       const permission = await Notification.requestPermission();
       updateAlertButtonState();
 
-      if (permission === 'granted' && 'serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.ready;
-        if (reg.active) {
-          reg.active.postMessage({
-            type: 'NEW_RFQ_ALERT',
-            title: '✅ Live Tender Alerts Enabled',
-            body: `Connected as ${supName}. You will be notified immediately when new RFQs are published.`,
-            url: '/supplier_dashboard.html'
-          });
-        }
+      if (permission === 'granted') {
+        playNotificationChime();
+        await showSystemNotification(
+          'Live Tender Alerts Enabled',
+          `Connected as ${supName}. You will receive instant alerts when new RFQs are published.`
+        );
+      } else if (permission === 'denied') {
+        alert('Notifications are blocked in your browser settings. Tap the lock icon in the address bar -> Permissions -> Allow Notifications.');
       }
     }
 
@@ -324,7 +347,7 @@
         gain.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.45);
-      } catch (e) { /* AudioContext requires prior user gesture */ }
+      } catch (e) {}
     }
 
     async function notifyNewRfqDetected(rfq) {
@@ -333,21 +356,14 @@
       const toast = document.getElementById('liveRfqToast');
       const toastText = document.getElementById('liveRfqToastText');
       if (toast && toastText) {
-        toastText.textContent = `🚨 New Tender Published: ${rfq.id} — ${rfq.category} (${rfq.quantity} Units)`;
+        toastText.textContent = `New Tender Published: ${rfq.id} — ${rfq.category} (${rfq.quantity} Units)`;
         toast.style.display = 'flex';
       }
 
-      if ('Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.ready;
-        if (reg.active) {
-          reg.active.postMessage({
-            type: 'NEW_RFQ_ALERT',
-            title: `🚨 New RFQ: ${rfq.id} (${rfq.category})`,
-            body: `Qty: ${rfq.quantity} Units | Size: ${rfq.size} | Deadline: ${rfq.delivery_deadline}. Tap to submit sealed quote.`,
-            url: '/supplier_dashboard.html'
-          });
-        }
-      }
+      await showSystemNotification(
+        `New RFQ: ${rfq.id} (${rfq.category})`,
+        `Qty: ${rfq.quantity} Units | Size: ${rfq.size} | Deadline: ${rfq.delivery_deadline}. Tap to submit sealed quote.`
+      );
     }
 
     // --- TRANSLATION DICTIONARY ---

@@ -1,4 +1,4 @@
-// Service Worker for Flipkart-style push notifications
+// Service Worker v3 - Instant OS Push & Tender Alert Handler
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -7,19 +7,18 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Helper to display rich OS lock-screen notification
+// Helper to display instant OS lock-screen notification without external icon latency
 function triggerConsignmentNotification(data) {
-  const title = data.title || '🚨 New Consignment Requirement Available!';
+  const title = data.title || 'New Consignment Requirement Available!';
   const options = {
     body: data.body || 'Shree Mahalaxmi Marbel and Granite posted a new tender.',
-    icon: data.icon || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-    badge: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
     vibrate: [200, 100, 200, 100, 200],
     tag: 'negotiagent-rfq-' + Date.now(),
     renotify: true,
+    requireInteraction: true,
     data: { url: data.url || '/supplier_dashboard.html' },
     actions: [
-      { action: 'bid', title: '⚡ Submit Quote Now' },
+      { action: 'bid', title: 'Submit Quote Now' },
       { action: 'close', title: 'Dismiss' }
     ]
   };
@@ -37,9 +36,8 @@ self.addEventListener('message', (event) => {
 // 2. Listen for incoming push payloads from server
 self.addEventListener('push', (event) => {
   let data = {
-    title: '🚨 New Consignment Requirement Available!',
+    title: 'New Consignment Requirement Available!',
     body: 'Shree Mahalaxmi Marbel and Granite posted a new tender.',
-    icon: '/css/favicon.ico',
     url: '/supplier_dashboard.html'
   };
 

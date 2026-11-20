@@ -6,7 +6,7 @@
   <title>Supplier Bidding Terminal | NegotiAgent AI</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    * { box-sizing: border-box; }
+- { box-sizing: border-box; }
     body {
       background-color: #f1f5f9;
       margin: 0;
@@ -27,7 +27,6 @@
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      flex-wrap: wrap;
     }
     .lang-picker-sm {
       background: #1e293b;
@@ -38,22 +37,6 @@
       font-size: 0.82rem;
       cursor: pointer;
       outline: none;
-    }
-    .btn-push-alert {
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fcd34d;
-      padding: 0.4rem 0.85rem;
-      border-radius: 4px;
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 0.82rem;
-      transition: all 0.15s;
-    }
-    .btn-push-alert.active {
-      background: #dcfce7;
-      color: #166534;
-      border-color: #86efac;
     }
     .btn-signout {
       background: #fee2e2;
@@ -67,22 +50,6 @@
       transition: background 0.15s;
     }
     .btn-signout:hover { background: #fecaca; }
-
-    .live-rfq-toast {
-      display: none;
-      max-width: 1140px;
-      margin: 1rem auto 0 auto;
-      padding: 0.85rem 1.25rem;
-      background: #dbeafe;
-      border: 1px solid #3b82f6;
-      border-left: 5px solid #1d4ed8;
-      border-radius: 6px;
-      color: #1e3a8a;
-      font-weight: 600;
-      font-size: 0.9rem;
-      justify-content: space-between;
-      align-items: center;
-    }
     
     .sup-container {
       max-width: 1140px;
@@ -173,9 +140,6 @@
     </div>
 
     <div class="header-right">
-      <button id="btnEnableAlerts" class="btn-push-alert" onclick="enableSupplierPushAlerts()" data-i18n="btnAlerts">
-        🔔 Enable Push Alerts
-      </button>
       <select id="langSelector" class="lang-picker-sm">
         <option value="en">English (EN)</option>
         <option value="hi">हिंदी (HI)</option>
@@ -184,12 +148,6 @@
       <button class="btn-signout" onclick="handleSupplierSignOut()" data-i18n="btnSignOut">Sign Out</button>
     </div>
   </header>
-
-  <!-- LIVE IN-APP NEW RFQ BANNER -->
-  <div id="liveRfqToast" class="live-rfq-toast">
-    <span id="liveRfqToastText">New Consignment Requirement Published!</span>
-    <button onclick="document.getElementById('liveRfqToast').style.display='none'" style="background:none; border:none; font-weight:bold; cursor:pointer; color:#1e3a8a;">✕</button>
-  </div>
 
   <!-- MAIN VIEW -->
   <main class="sup-container">
@@ -234,28 +192,22 @@
             </select>
           </div>
           <div class="form-group">
-            <label data-i18n="lblRate">Opening Rate / Box (₹)</label>
-            <input type="number" id="bidRate" class="form-control" placeholder="e.g. 535" required>
-          </div>
-          <div class="form-group">
-            <label data-i18n="lblWalkaway">Bottom Margin / Floor (₹)</label>
-            <input type="number" id="bidWalkaway" class="form-control" placeholder="e.g. 485" required>
+            <label data-i18n="lblRate">Rate / Box (₹)</label>
+            <input type="number" id="bidRate" class="form-control" placeholder="e.g. 520" required>
           </div>
           <div class="form-group">
             <label data-i18n="lblLead">Delivery Days (Lead)</label>
             <input type="number" id="bidLead" class="form-control" value="4" required>
           </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:0.65rem;">
           <div class="form-group">
             <label data-i18n="lblBreakage">Max Breakage (%)</label>
             <input type="number" id="bidBreakage" class="form-control" step="0.1" value="0.8" required>
           </div>
-          <div class="form-group">
-            <label data-i18n="lblRemarks">Message / Notes to Proprietor</label>
-            <input type="text" id="bidRemarks" class="form-control" data-i18n-placeholder="phRemarks" placeholder="e.g. Ready stock at Shiroli yard, corner protection wrap included">
-          </div>
+        </div>
+
+        <div class="form-group">
+          <label data-i18n="lblRemarks">Message / Notes to Proprietor</label>
+          <input type="text" id="bidRemarks" class="form-control" data-i18n-placeholder="phRemarks" placeholder="e.g. Ready stock at Shiroli yard, corner protection wrap included">
         </div>
 
         <button type="submit" id="btnSubmitBid" class="btn-submit" data-i18n="btnSubmitBid">🚀 Submit Sealed Bid to Buyer</button>
@@ -278,111 +230,11 @@
 
     document.getElementById('dispCompanyName').textContent = `${supName} (${supId})`;
 
-    // --- CLEAN SERVICE WORKER RESET & GUARANTEED NOTIFICATION ---
-    async function registerFreshServiceWorker() {
-      if (!('serviceWorker' in navigator)) return null;
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (const r of regs) {
-        if (!r.active || !r.active.scriptURL.includes('v=4')) {
-          await r.unregister();
-        }
-      }
-      return await navigator.serviceWorker.register('/sw.js?v=4');
-    }
-
-    registerFreshServiceWorker().catch(console.error);
-
-    async function showSystemNotification(title, body) {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-      const options = {
-        body: body,
-        vibrate: [300, 100, 300],
-        tag: 'rfq-' + Date.now(),
-        renotify: true,
-        data: { url: '/supplier_dashboard.html' }
-      };
-
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        await reg.showNotification(title, options);
-      } catch (e) {
-        new Notification(title, options);
-      }
-    }
-
-    function updateAlertButtonState() {
-      const btn = document.getElementById('btnEnableAlerts');
-      if (!btn) return;
-      if ('Notification' in window && Notification.permission === 'granted') {
-        btn.classList.add('active');
-        btn.textContent = dict[currentLang].btnAlertsActive;
-      } else {
-        btn.classList.remove('active');
-        btn.textContent = dict[currentLang].btnAlerts;
-      }
-    }
-
-    async function enableSupplierPushAlerts() {
-      if (!('Notification' in window)) {
-        alert('Open this link in Google Chrome to enable notifications.');
-        return;
-      }
-
-      const permission = await Notification.requestPermission();
-      updateAlertButtonState();
-
-      if (permission === 'granted') {
-        playNotificationChime();
-        await showSystemNotification(
-          'NegotiAgent AI — Alerts Connected',
-          `Logged in as ${supName}. Ready for live RFQ alerts.`
-        );
-      } else {
-        alert('Permission status: ' + permission + '. Enable notifications in Chrome Site Settings.');
-      }
-    }
-
-    function playNotificationChime() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.setValueAtTime(880.0, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.45);
-      } catch (e) {}
-    }
-
-    async function notifyNewRfqDetected(rfq) {
-      playNotificationChime();
-
-      const toast = document.getElementById('liveRfqToast');
-      const toastText = document.getElementById('liveRfqToastText');
-      if (toast && toastText) {
-        toastText.textContent = `New Tender Published: ${rfq.id} — ${rfq.category} (${rfq.quantity} Units)`;
-        toast.style.display = 'flex';
-      }
-
-      await showSystemNotification(
-        `New RFQ: ${rfq.id} (${rfq.category})`,
-        `Qty: ${rfq.quantity} Units | Size: ${rfq.size} | Deadline: ${rfq.delivery_deadline}. Tap to submit sealed quote.`
-      );
-    }
-
     // --- TRANSLATION DICTIONARY ---
     const dict = {
       en: {
         supTitle: "Supplier Bidding Terminal",
         loggedAs: "Authenticated Vendor:",
-        btnAlerts: "🔔 Enable Push Alerts",
-        btnAlertsActive: "✅ Alerts Active",
         btnSignOut: "Sign Out",
         tendersHead: "📢 Active Consignment Demands",
         tendersSub: "Demands posted by Shree Mahalaxmi Marbel and Granite. Tap any tender to submit your quote:",
@@ -392,8 +244,7 @@
         optRound1: "Round 1 (Opening Quote)",
         optRound2: "Round 2 (Concession Counter)",
         optRound3: "Round 3 (Final Offer)",
-        lblRate: "Opening Rate / Box (₹)",
-        lblWalkaway: "Bottom Margin / Floor (₹)",
+        lblRate: "Rate / Box (₹)",
         lblLead: "Delivery Days (Lead)",
         lblBreakage: "Max Breakage (%)",
         lblRemarks: "Message / Notes to Proprietor",
@@ -406,8 +257,6 @@
       hi: {
         supTitle: "सप्लायर बिडिंग टर्मिनल",
         loggedAs: "प्रमाणित सप्लायर:",
-        btnAlerts: "🔔 अलर्ट चालू करें",
-        btnAlertsActive: "✅ अलर्ट सक्रिय",
         btnSignOut: "लॉग आउट",
         tendersHead: "📢 सक्रिय माल मांग (Tenders)",
         tendersSub: "श्री महालक्ष्मी मार्बल एंड ग्रेनाइट द्वारा जारी मांग। बोली लगाने के लिए किसी भी मांग पर क्लिक करें:",
@@ -417,8 +266,7 @@
         optRound1: "राउंड 1 (शुरुआती कोट)",
         optRound2: "राउंड 2 (छूट एवं काउंटर ऑफर)",
         optRound3: "राउंड 3 (अंतिम ऑफर)",
-        lblRate: "शुरुआती दर / बॉक्स (₹)",
-        lblWalkaway: "न्यूनतम बॉटम मार्जिन (₹)",
+        lblRate: "दर / बॉक्स (₹)",
         lblLead: "डिलीवरी दिन",
         lblBreakage: "अधिकतम टूट-फूट (%)",
         lblRemarks: "मालिक को संदेश / टिप्पणी",
@@ -431,8 +279,6 @@
       mr: {
         supTitle: "पुरवठादार बिडिंग टर्मिनल",
         loggedAs: "नोंदणीकृत पुरवठादार:",
-        btnAlerts: "🔔 नोटिफिकेशन सुरू करा",
-        btnAlertsActive: "✅ अलर्ट सुरू आहे",
         btnSignOut: "लॉग आउट करा",
         tendersHead: "📢 सध्याची खरेदी मागणी (Tenders)",
         tendersSub: "श्री महालक्ष्मी मार्बल अँड ग्रॅनाईटची मागणी. थेट दर पाठवण्यासाठी खालील मागणी निवडा:",
@@ -442,8 +288,7 @@
         optRound1: "फेरी १ (प्राथमिक कोट)",
         optRound2: "फेरी २ (सवलत / काउंटर ऑफर)",
         optRound3: "फेरी ३ (अंतिम ऑफर)",
-        lblRate: "प्राथमिक दर / बॉक्स (₹)",
-        lblWalkaway: "किमान बॉटम मार्जिन (₹)",
+        lblRate: "दर / बॉक्स (₹)",
         lblLead: "डिलिव्हरी दिवस",
         lblBreakage: "कमाल तुटफूट (%)",
         lblRemarks: "मालकास संदेश / टिप्पणी",
@@ -469,8 +314,6 @@
         const key = el.getAttribute('data-i18n-placeholder');
         if (activeDict[key]) el.placeholder = activeDict[key];
       });
-
-      updateAlertButtonState();
     }
 
     const langSelector = document.getElementById('langSelector');
@@ -485,25 +328,12 @@
       window.location.replace('/login.html');
     }
 
-    // --- LOAD RFQS & WATCH FOR NEW TENDERS ---
+    // --- LOAD RFQS ---
     async function loadRfqs() {
       try {
         const res = await fetch('/api/rfqs');
         if (res.ok) {
           rfqs = await res.json();
-
-          if (rfqs.length > 0) {
-            const newestRfq = rfqs[0];
-            const lastSeenId = localStorage.getItem('negotiagent_last_seen_rfq_id');
-
-            if (!lastSeenId) {
-              localStorage.setItem('negotiagent_last_seen_rfq_id', newestRfq.id);
-            } else if (newestRfq.id !== lastSeenId) {
-              localStorage.setItem('negotiagent_last_seen_rfq_id', newestRfq.id);
-              notifyNewRfqDetected(newestRfq);
-            }
-          }
-
           renderRfqList();
         }
       } catch (e) {
@@ -575,16 +405,6 @@
         return;
       }
 
-      const rateVal = parseFloat(document.getElementById('bidRate').value);
-      const walkawayVal = parseFloat(document.getElementById('bidWalkaway').value);
-
-      if (walkawayVal > rateVal) {
-        alertBox.className = 'alert-box error';
-        alertBox.textContent = "Bottom Margin / Floor cannot exceed your Opening Rate.";
-        alertBox.style.display = 'block';
-        return;
-      }
-
       btn.disabled = true;
       btn.textContent = "Transmitting Bid...";
 
@@ -592,8 +412,7 @@
         rfq_id: rfqId,
         supplier_id: supId,
         round_number: parseInt(document.getElementById('bidRound').value, 10),
-        rate_per_box: rateVal,
-        walkaway_price: walkawayVal,
+        rate_per_box: parseFloat(document.getElementById('bidRate').value),
         lead_days: parseInt(document.getElementById('bidLead').value, 10),
         breakage_pct: parseFloat(document.getElementById('bidBreakage').value),
         remarks: document.getElementById('bidRemarks').value
@@ -614,7 +433,7 @@
         const data = await res.json();
         feedback.style.display = 'block';
         feedbackText.innerHTML = `
-          <strong>Your Submitted Rate:</strong> ₹${data.submitted_rate}/box (Floor: ₹${walkawayVal}/box) | 
+          <strong>Your Submitted Rate:</strong> ₹${data.submitted_rate}/box | 
           <strong>Buyer Agent Counter:</strong> ₹${data.buyer_counter ? data.buyer_counter + '/box' : 'Under Review'}<br>
           <strong>Outcome / Status:</strong> <span class="status-badge badge-success">${data.decision}</span>
         `;
@@ -634,9 +453,9 @@
       }
     });
 
-    // Initial load and periodic refresh (every 4 seconds)
+    // Initial load and periodic refresh
     loadRfqs();
-    setInterval(loadRfqs, 4000);
+    setInterval(loadRfqs, 5000);
   </script>
 </body>
 </html>

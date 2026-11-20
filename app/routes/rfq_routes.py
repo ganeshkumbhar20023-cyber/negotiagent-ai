@@ -1,6 +1,6 @@
 """
 API Endpoints for Procurement Requests (RFQs)
-Provides clean endpoints to fetch, submit, and broadcast real-time alerts for procurement requests.
+Provides clean endpoints to fetch and submit procurement requests.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -55,21 +55,6 @@ class RFQResponse(BaseModel):
 def get_all_rfqs(db: Session = Depends(get_db)):
     """Fetch all RFQs from SQLite, newest first."""
     return db.query(RFQ).order_by(RFQ.created_at.desc()).all()
-
-@router.get("/latest-alert")
-def get_latest_rfq_alert(db: Session = Depends(get_db)):
-    """Return the most recently created RFQ for real-time supplier Service Worker push alerts."""
-    latest = db.query(RFQ).order_by(RFQ.created_at.desc()).first()
-    if not latest:
-        return {"has_rfq": False}
-    return {
-        "has_rfq": True,
-        "rfq_id": latest.id,
-        "title": f"{latest.category} ({latest.size})",
-        "quantity": latest.quantity,
-        "status": latest.status,
-        "created_at": latest.created_at.isoformat() if latest.created_at else ""
-    }
 
 @router.post("", response_model=RFQResponse)
 def create_rfq(payload: RFQCreateRequest, db: Session = Depends(get_db)):

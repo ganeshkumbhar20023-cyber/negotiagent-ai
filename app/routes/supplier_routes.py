@@ -1,283 +1,257 @@
 """
-API Endpoints for Multi-Round Negotiations and Live Mobile Bidding
-Supports autonomous multi-agent simulation and live real-time human bidding via mobile portal.
+API Endpoints for Supplier Agents, Simulated Suppliers, and Vendor Registration.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, AliasChoices, ConfigDict
+from typing import Optional, List
+import hashlib
+import re
 
 from app.database.session import get_db
-from app.database.models import RFQ, Supplier, NegotiationSession, NegotiationRound
-from app.services.negotiation_engine import run_negotiation_simulation
+from app.database.models import Supplier
 
-router = APIRouter(prefix="/api/negotiations", tags=["Negotiations"])
+router = APIRouter(prefix="/api/suppliers", tags=["Suppliers"])
 
-
-class LiveSupplierBidRequest(BaseModel):
-    rfq_id: str
-    supplier_id: str
-    round_number: int = Field(..., ge=1, le=3)
-    rate_per_box: float = Field(..., gt=0)
-    walkaway_price: Optional[float] = Field(default=None, gt=0)
-    lead_days: int = Field(..., gt=0)
-    breakage_pct: float = Field(..., ge=0.0, le=10.0)
-    remarks: Optional[str] = ""
-
-
-@router.post("/start/{rfq_id}")
-def start_negotiation(rfq_id: str, db: Session = Depends(get_db)):
-    """Executes the autonomous 3-round multi-agent auction for an RFQ."""
-    rfq = db.query(RFQ).filter(RFQ.id == rfq_id).first()
-    if not rfq:
-        raise HTTPException(status_code=404, detail=f"RFQ '{rfq_id}' not found.")
-
-    suppliers = db.query(Supplier).all()
-    if not suppliers:
-        raise HTTPException(status_code=400, detail="No registered supplier agents found in database.")
-
-    # Run multi-agent simulation engine
-    outcome = run_negotiation_simulation(rfq, suppliers)
-
-    # Persist or update negotiation session
-    session_id = f"SESS-{rfq.id}"
-    session = db.query(NegotiationSession).filter(NegotiationSession.id == session_id).first()
-    if not session:
-        session = NegotiationSession(
-            id=session_id,
-            rfq_id=rfq.id,
-            status="completed"
-        )
-        db.add(session)
-    else:
-        # Clear previous rounds if re-running
-        db.query(NegotiationRound).filter(NegotiationRound.session_id == session_id).delete()
-
-    winning_sup = outcome.get("winning_supplier") or {}
-    session.recommended_supplier_id = winning_sup.get("id")
-    session.final_price = float(outcome.get("final_total_cost") or 0.0)
-    session.savings_amount = float(outcome.get("savings_amount") or 0.0)
-    session.explanation_summary = str(outcome.get("explanation") or "")
-    session.status = "completed"
-
-    # Persist each round record, handling alternative key names safely
-    rounds_list = outcome.get("rounds") or []
-    for r in rounds_list:
-        quote_val = (
-            r.get("supplier_quote")
-            if r.get("supplier_quote") is not None
-            else r.get("quote")
-            if r.get("quote") is not None
-            else r.get("rate_per_box", 500.0)
-        )
-        lead_val = (
-            r.get("lead_days_offered")
-            if r.get("lead_days_offered") is not None
-            else r.get("lead_days", 4)
-        )
-        breakage_val = (
-            r.get("breakage_offered")
-            if r.get("breakage_offered") is not None
-            else r.get("breakage_pct")
-            if r.get("breakage_pct") is not None
-            else r.get("breakage", 1.0)
-        )
-        score_val = (
-            r.get("composite_score")
-            if r.get("composite_score") is not None
-            else r.get("score", 70.0)
-        )
-
-        rnd_record = NegotiationRound(
-            session_id=session.id,
-            round_number=int(r.get("round_number", 1)),
-            supplier_id=str(r.get("supplier_id", "")),
-            supplier_quote=float(quote_val),
-            buyer_counter=float(r.get("buyer_counter") or 0.0),
-            lead_days_offered=int(lead_val),
-            breakage_offered=float(breakage_val),
-            composite_score=float(score_val),
-            decision=str(r.get("decision", "EVALUATING")),
-            rationale=str(r.get("rationale", ""))
-        )
-        db.add(rnd_record)
-
-    rfq.status = "Negotiation Awarded"
-    db.commit()
-
-    return outcome
+DEFAULT_SIMULATED_SUPPLIERS = [
+    {
+        "id": "SUP-MORBI-01",
+        "name": "Surya Ceramic & Vitrified Tiles (Morbi)",
+        "base_price_per_box": 540.0,
+        "min_walkaway_price": 475.0,
+        "quality_score": 91.0,
+        "delivery_lead_days": 7,
+        "breakage_pct": 1.2,
+    },
+    {
+        "id": "SUP-SHIROLI-02",
+        "name": "Deccan Stone & Marble Depot (Shiroli MIDC)",
+        "base_price_per_box": 555.0,
+        "min_walkaway_price": 490.0,
+        "quality_score": 89.0,
+        "delivery_lead_days": 2,
+        "breakage_pct": 0.6,
+    },
+    {
+        "id": "SUP-UDAIPUR-03",
+        "name": "Mewar Natural Marble & Granite Co.",
+        "base_price_per_box": 565.0,
+        "min_walkaway_price": 495.0,
+        "quality_score": 94.0,
+        "delivery_lead_days": 8,
+        "breakage_pct": 1.0,
+    },
+]
 
 
-@router.get("/{rfq_id}")
-def get_negotiation_history(rfq_id: str, db: Session = Depends(get_db)):
-    """Retrieves full transcript, concession rounds, and rationale for audit replay."""
-    session = (
-        db.query(NegotiationSession)
-        .filter(NegotiationSession.rfq_id == rfq_id)
-        .order_by(NegotiationSession.created_at.desc())
-        .first()
+class SupplierCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("id", "supplier_id", "username", "choose_username")
     )
-
-    if not session:
-        raise HTTPException(status_code=404, detail=f"No negotiation session found for RFQ '{rfq_id}'.")
-
-    rounds = (
-        db.query(NegotiationRound)
-        .filter(NegotiationRound.session_id == session.id)
-        .order_by(NegotiationRound.round_number.asc(), NegotiationRound.id.asc())
-        .all()
+    name: str = Field(
+        validation_alias=AliasChoices("name", "company_name", "company", "depot_name", "company_depot_name")
     )
+    username: Optional[str] = None
+    password: Optional[str] = Field(
+        default="supplier123",
+        validation_alias=AliasChoices("password", "create_password")
+    )
+    phone: Optional[str] = Field(
+        default="",
+        validation_alias=AliasChoices("phone", "contact", "whatsapp", "supplier_contact")
+    )
+    location: Optional[str] = Field(
+        default="Kolhapur Hub",
+        validation_alias=AliasChoices("location", "hub", "depot_hub", "manufacturing_hub")
+    )
+    base_price_per_box: float = Field(
+        default=540.0,
+        gt=0,
+        validation_alias=AliasChoices("base_price_per_box", "list_quote", "base_price", "rate_per_box")
+    )
+    min_walkaway_price: float = Field(
+        default=480.0,
+        gt=0,
+        validation_alias=AliasChoices("min_walkaway_price", "bottom_margin", "walkaway_price", "min_price")
+    )
+    delivery_lead_days: int = Field(
+        default=4,
+        ge=1,
+        validation_alias=AliasChoices("delivery_lead_days", "lead_days", "standard_lead_days", "lead")
+    )
+    breakage_pct: float = Field(
+        default=0.8,
+        ge=0.0,
+        le=25.0,
+        validation_alias=AliasChoices("breakage_pct", "breakage_guarantee", "breakage")
+    )
+    quality_score: float = Field(default=90.0, ge=0.0, le=100.0)
+    strategy: Optional[str] = "balanced"
 
-    suppliers_map = {s.id: s.name for s in db.query(Supplier).all()}
 
-    rounds_data = []
-    for r in rounds:
-        rounds_data.append({
-            "id": r.id,
-            "round_number": r.round_number,
-            "supplier_id": r.supplier_id,
-            "supplier_name": suppliers_map.get(r.supplier_id, r.supplier_id),
-            "supplier_quote": r.supplier_quote,
-            "buyer_counter": r.buyer_counter,
-            "lead_days_offered": r.lead_days_offered,
-            "breakage_offered": r.breakage_offered,
-            "composite_score": r.composite_score,
-            "decision": r.decision,
-            "rationale": r.rationale,
-            "timestamp": r.timestamp.isoformat() if r.timestamp else None
-        })
+class SupplierLoginRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
 
+    supplier_id: str = Field(validation_alias=AliasChoices("supplier_id", "username", "id"))
+    password: Optional[str] = ""
+
+
+def _hash_password(raw: str) -> str:
+    return hashlib.sha256((raw or "").encode("utf-8")).hexdigest()
+
+
+def _serialize_supplier(s: Supplier) -> dict:
     return {
-        "session_id": session.id,
-        "rfq_id": session.rfq_id,
-        "status": session.status,
-        "recommended_supplier_id": session.recommended_supplier_id,
-        "recommended_supplier_name": suppliers_map.get(session.recommended_supplier_id, session.recommended_supplier_id),
-        "final_price": session.final_price,
-        "savings_amount": session.savings_amount,
-        "explanation": session.explanation_summary,
-        "rounds": rounds_data
+        "id": s.id,
+        "username": getattr(s, "username", None) or s.id,
+        "name": s.name,
+        "company_name": s.name,
+        "phone": getattr(s, "phone", None) or "",
+        "location": getattr(s, "location", None) or "Kolhapur Hub",
+        "base_price_per_box": float(getattr(s, "base_price_per_box", 540.0) or 540.0),
+        "list_quote": float(getattr(s, "base_price_per_box", 540.0) or 540.0),
+        "min_walkaway_price": float(getattr(s, "min_walkaway_price", 480.0) or 480.0),
+        "bottom_margin": float(getattr(s, "min_walkaway_price", 480.0) or 480.0),
+        "delivery_lead_days": int(getattr(s, "delivery_lead_days", 4) or 4),
+        "breakage_pct": float(getattr(s, "breakage_pct", 0.8) or 0.8),
+        "quality_score": float(getattr(s, "quality_score", 90.0) or 90.0),
+        "strategy": getattr(s, "strategy", None) or "balanced",
     }
 
 
-@router.post("/live-bid")
-def submit_live_supplier_bid(payload: LiveSupplierBidRequest, db: Session = Depends(get_db)):
-    """Processes a live manual bid entered from a mobile phone by a human supplier."""
-    rfq = db.query(RFQ).filter(RFQ.id == payload.rfq_id).first()
-    if not rfq:
-        raise HTTPException(status_code=404, detail=f"RFQ '{payload.rfq_id}' not found.")
+def _ensure_simulated_suppliers(db: Session) -> List[Supplier]:
+    existing = db.query(Supplier).all()
+    if existing:
+        return existing
 
-    supplier = db.query(Supplier).filter(Supplier.id == payload.supplier_id).first()
-    supplier_name = supplier.name if supplier else payload.supplier_id
-
-    if payload.walkaway_price is not None and payload.walkaway_price > payload.rate_per_box:
-        raise HTTPException(
-            status_code=400,
-            detail="Walkaway bottom margin cannot exceed the quoted rate per box."
+    created_rows = []
+    for item in DEFAULT_SIMULATED_SUPPLIERS:
+        row = Supplier(
+            id=item["id"],
+            name=item["name"],
+            base_price_per_box=item["base_price_per_box"],
+            min_walkaway_price=item["min_walkaway_price"],
+            quality_score=item["quality_score"],
+            delivery_lead_days=item["delivery_lead_days"],
+            breakage_pct=item["breakage_pct"],
         )
-
-    # Determine effective supplier walkaway floor (live input overrides stored floor)
-    stored_floor = getattr(supplier, "min_walkaway_price", None) if supplier else None
-    effective_floor = payload.walkaway_price if payload.walkaway_price is not None else stored_floor
-
-    if payload.walkaway_price is not None and supplier is not None and hasattr(supplier, "min_walkaway_price"):
-        supplier.min_walkaway_price = payload.walkaway_price
-
-    # Retrieve or create negotiation session
-    session = (
-        db.query(NegotiationSession)
-        .filter(NegotiationSession.rfq_id == payload.rfq_id)
-        .order_by(NegotiationSession.created_at.desc())
-        .first()
-    )
-
-    if not session:
-        session = NegotiationSession(
-            id=f"SESS-{payload.rfq_id}",
-            rfq_id=payload.rfq_id,
-            status="in_progress"
-        )
-        db.add(session)
-        db.commit()
-        db.refresh(session)
-
-    target_rate = round(rfq.budget_ceiling / rfq.quantity, 2)
-    raw_counter = round(target_rate * 0.94, 2) if payload.rate_per_box > target_rate else payload.rate_per_box
-
-    # Clamp counter-offer at or above supplier's walkaway bottom margin if specified
-    if effective_floor is not None and raw_counter < effective_floor:
-        buyer_counter = round(effective_floor, 2)
-    else:
-        buyer_counter = raw_counter
-
-    # Calculate sub-scores and multi-criteria utility score U
-    price_ratio = (rfq.budget_ceiling - (payload.rate_per_box * rfq.quantity)) / rfq.budget_ceiling
-    if payload.rate_per_box <= target_rate:
-        s_price = min(100.0, max(0.0, 50.0 + (price_ratio * 150.0)))
-    else:
-        s_price = max(0.0, 50.0 - (abs(price_ratio) * 100.0))
-
-    s_lead = min(100.0, max(0.0, (1.0 - (payload.lead_days / 7.0)) * 100.0))
-    s_breakage = min(100.0, max(0.0, (1.0 - (payload.breakage_pct / max(0.1, rfq.max_breakage))) * 100.0))
-    s_quality = supplier.quality_score if supplier else 90.0
-
-    u_score = (
-        (s_price * (rfq.weight_price / 100.0)) +
-        (s_quality * (rfq.weight_quality / 100.0)) +
-        (s_lead * (rfq.weight_delivery / 100.0)) +
-        (s_breakage * (rfq.weight_warranty / 100.0))
-    )
-
-    decision = "ACCEPTED" if (payload.round_number == 3 and payload.rate_per_box <= target_rate) else "COUNTER_OFFERED"
-
-    floor_note = f" | Floor: ₹{effective_floor:.2f}/box" if effective_floor is not None else ""
-    rationale_text = (
-        f"{payload.remarks}{floor_note}".strip()
-        if payload.remarks
-        else f"Live Mobile Bid submitted by {supplier_name} for Round {payload.round_number}{floor_note}"
-    )
-
-    round_record = NegotiationRound(
-        session_id=session.id,
-        round_number=payload.round_number,
-        supplier_id=payload.supplier_id,
-        supplier_quote=payload.rate_per_box,
-        buyer_counter=buyer_counter,
-        lead_days_offered=payload.lead_days,
-        breakage_offered=payload.breakage_pct,
-        composite_score=round(u_score, 2),
-        decision=decision,
-        rationale=rationale_text
-    )
-    db.add(round_record)
-
-    # If Round 3 completed, award session
-    if payload.round_number == 3:
-        session.status = "completed"
-        session.recommended_supplier_id = payload.supplier_id
-        session.final_price = round(payload.rate_per_box * rfq.quantity, 2)
-        base_rate = (
-            supplier.base_price_per_box
-            if supplier and getattr(supplier, "base_price_per_box", None) is not None
-            else payload.rate_per_box
-        )
-        initial_cost = base_rate * rfq.quantity
-        session.savings_amount = max(0.0, round(initial_cost - session.final_price, 2))
-        session.explanation_summary = (
-            f"Consignment awarded to {supplier_name} at ₹{payload.rate_per_box}/box "
-            f"via live phone bidding. Total order ₹{session.final_price:,.2f} with {payload.lead_days} days lead time."
-        )
-        rfq.status = "Negotiation Awarded"
+        if hasattr(row, "password_hash"):
+            row.password_hash = _hash_password("supplier123")
+        db.add(row)
+        created_rows.append(row)
 
     db.commit()
+    for row in created_rows:
+        db.refresh(row)
+    return created_rows
+
+
+def _generate_supplier_id(raw_id: Optional[str], name: str, db: Session) -> str:
+    seed_text = (raw_id or "").strip() or name
+    slug = re.sub(r"[^A-Za-z0-9]+", "", seed_text).upper()[:8] or "SUP"
+    base_id = slug if slug.startswith("SUP") else f"SUP-{slug}"
+    candidate = base_id
+    counter = 1
+    while db.query(Supplier).filter(Supplier.id == candidate).first() is not None:
+        counter += 1
+        candidate = f"{base_id}-{counter}"
+    return candidate
+
+
+@router.get("")
+@router.get("/")
+def list_suppliers(db: Session = Depends(get_db)):
+    """Return all registered/simulated suppliers from SQLite."""
+    suppliers = _ensure_simulated_suppliers(db)
+    return [_serialize_supplier(s) for s in suppliers]
+
+
+@router.get("/simulated")
+def list_simulated_suppliers(db: Session = Depends(get_db)):
+    """Return simulated/registered supplier pool."""
+    suppliers = _ensure_simulated_suppliers(db)
+    return [_serialize_supplier(s) for s in suppliers]
+
+
+@router.post("", status_code=201)
+@router.post("/", status_code=201)
+@router.post("/register", status_code=201)
+def register_supplier(payload: SupplierCreateRequest, db: Session = Depends(get_db)):
+    """Register a new supplier company in SQLite and return confirmation."""
+    clean_name = (payload.name or "").strip()
+    if not clean_name:
+        raise HTTPException(status_code=400, detail="Company / Depot Name is required.")
+
+    if payload.min_walkaway_price > payload.base_price_per_box:
+        raise HTTPException(
+            status_code=400,
+            detail="Bottom Margin (₹ / Box) cannot exceed List Quote (₹ / Box)."
+        )
+
+    supplier_id = _generate_supplier_id(payload.id or payload.username, clean_name, db)
+
+    new_supplier = Supplier(
+        id=supplier_id,
+        name=clean_name,
+        base_price_per_box=float(payload.base_price_per_box),
+        min_walkaway_price=float(payload.min_walkaway_price),
+        quality_score=float(payload.quality_score),
+        delivery_lead_days=int(payload.delivery_lead_days),
+        breakage_pct=float(payload.breakage_pct),
+    )
+
+    if hasattr(new_supplier, "username"):
+        new_supplier.username = (payload.username or payload.id or supplier_id).strip()
+    if hasattr(new_supplier, "phone") and payload.phone:
+        new_supplier.phone = payload.phone.strip()
+    if hasattr(new_supplier, "location") and payload.location:
+        new_supplier.location = payload.location.strip()
+    if hasattr(new_supplier, "strategy") and payload.strategy:
+        new_supplier.strategy = payload.strategy.strip()
+    if hasattr(new_supplier, "password_hash"):
+        new_supplier.password_hash = _hash_password(payload.password or "supplier123")
+
+    db.add(new_supplier)
+    db.commit()
+    db.refresh(new_supplier)
+
+    serialized = _serialize_supplier(new_supplier)
+    return {
+        "status": "registered",
+        "message": f"Registered '{new_supplier.name}' successfully! Login ID / Username: {new_supplier.id}",
+        "supplier_id": new_supplier.id,
+        "supplier": serialized,
+        **serialized,
+    }
+
+
+@router.post("/login")
+def login_supplier(payload: SupplierLoginRequest, db: Session = Depends(get_db)):
+    """Authenticate a supplier by ID or username."""
+    query_val = payload.supplier_id.strip()
+    upper_val = query_val.upper()
+
+    supplier = (
+        db.query(Supplier)
+        .filter((Supplier.id == upper_val) | (Supplier.id == query_val))
+        .first()
+    )
+    if not supplier and hasattr(Supplier, "username"):
+        supplier = db.query(Supplier).filter(Supplier.username == query_val).first()
+
+    if not supplier:
+        raise HTTPException(status_code=404, detail=f"Supplier '{query_val}' not found.")
+
+    stored_hash = getattr(supplier, "password_hash", None)
+    if stored_hash and payload.password:
+        if _hash_password(payload.password) != stored_hash:
+            raise HTTPException(status_code=401, detail="Invalid supplier credentials.")
 
     return {
-        "status": "success",
-        "round_number": payload.round_number,
-        "submitted_rate": payload.rate_per_box,
-        "walkaway_price": effective_floor,
-        "buyer_counter": buyer_counter,
-        "composite_score": round(u_score, 2),
-        "decision": decision
+        "status": "authenticated",
+        "supplier": _serialize_supplier(supplier),
     }

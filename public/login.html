@@ -295,7 +295,7 @@
               <input type="number" id="regBreakage" class="form-control" step="0.1" value="0.8" required>
             </div>
           </div>
-          <button type="submit" class="btn-submit btn-vendor" data-i18n="btnRegisterSup">Save Credentials & Register →</button>
+          <button type="submit" id="btnSubmitSupplierReg" class="btn-submit btn-vendor" data-i18n="btnRegisterSup">Save Credentials & Register →</button>
         </form>
       </div>
 
@@ -312,7 +312,7 @@
 
     // Register Service Worker for Notifications
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js?v=4').catch(() => {});
     }
 
     // --- TRILINGUAL DICTIONARY ---
@@ -417,7 +417,7 @@
         lblSupLead: "डिलिव्हरी दिवस",
         lblSupBreakage: "तुटफूट हमी (%)",
         btnRegisterSup: "खाते तयार करून नोंदवा →",
-        footerText: "श्री महालक्ष्मी मार्बल अँड ग्रॅनाईट — मुधळ तिट्टा, कोल्हापूर | शैक्षणिक प्रोटोटाईप (DYPCET कोल्हापूर)"
+        footerText: "श्री महालक्ष्मी मार्बल अँड ग्रॅनाईट — मुधळ तिट्टा, कोल्हापूर | शैक्षणिक प्रोटोटाइप (DYPCET कोल्हापूर)"
       }
     };
 
@@ -497,14 +497,24 @@
       paneLogin.style.display = 'none';
     });
 
+    function extractSupplierRecord(data, fallbackId, fallbackName) {
+      const sup = data && typeof data.supplier === 'object' && data.supplier !== null ? data.supplier : data;
+      return {
+        id: (sup && sup.id) || (data && data.supplier_id) || fallbackId,
+        name: (sup && (sup.name || sup.company_name)) || fallbackName
+      };
+    }
+
     // Supplier Login Submission
     document.getElementById('supplierLoginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('supLoginAlert');
       alertBox.style.display = 'none';
 
+      const usernameVal = document.getElementById('supLoginUsername').value.trim();
       const payload = {
-        username: document.getElementById('supLoginUsername').value.trim(),
+        username: usernameVal,
+        supplier_id: usernameVal,
         password: document.getElementById('supLoginPassword').value.trim()
       };
 
@@ -515,14 +525,14 @@
           body: JSON.stringify(payload)
         });
 
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || 'Login failed');
+          throw new Error(data.detail || data.message || 'Login failed');
         }
 
-        const supplier = await res.json();
-        sessionStorage.setItem('negotiagent_supplier_id', supplier.id);
-        sessionStorage.setItem('negotiagent_supplier_name', supplier.name);
+        const sup = extractSupplierRecord(data, usernameVal, usernameVal);
+        sessionStorage.setItem('negotiagent_supplier_id', sup.id);
+        sessionStorage.setItem('negotiagent_supplier_name', sup.name);
         window.location.href = '/supplier_dashboard.html';
       } catch (err) {
         alertBox.className = 'alert-box error';
@@ -535,51 +545,86 @@
     document.getElementById('supplierRegForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('supRegAlert');
+      const submitBtn = document.getElementById('btnSubmitSupplierReg');
       alertBox.style.display = 'none';
 
+      const usernameVal = document.getElementById('regUsername').value.trim();
+      const nameVal = document.getElementById('regName').value.trim();
+      const baseVal = parseFloat(document.getElementById('regBase').value);
+      const walkawayVal = parseFloat(document.getElementById('regWalkaway').value);
+
+      if (walkawayVal > baseVal) {
+        alertBox.className = 'alert-box error';
+        alertBox.textContent = 'Bottom Margin (₹ / Box) cannot exceed List Quote (₹ / Box).';
+        alertBox.style.display = 'block';
+        return;
+      }
+
       const payload = {
-        username: document.getElementById('regUsername').value.trim(),
+        id: usernameVal,
+        username: usernameVal,
         password: document.getElementById('regPassword').value.trim(),
-        name: document.getElementById('regName').value.trim(),
+        name: nameVal,
+        company_name: nameVal,
+        phone: document.getElementById('regPhone').value.trim(),
         contact_number: document.getElementById('regPhone').value.trim(),
+        location: document.getElementById('regHub').value.trim(),
         hub_location: document.getElementById('regHub').value.trim(),
-        base_price_per_box: parseFloat(document.getElementById('regBase').value),
-        min_walkaway_price: parseFloat(document.getElementById('regWalkaway').value),
+        base_price_per_box: baseVal,
+        min_walkaway_price: walkawayVal,
         standard_lead_days: parseInt(document.getElementById('regLead').value, 10),
+        delivery_lead_days: parseInt(document.getElementById('regLead').value, 10),
         min_lead_days: Math.max(1, parseInt(document.getElementById('regLead').value, 10) - 2),
         offered_breakage_pct: parseFloat(document.getElementById('regBreakage').value),
+        breakage_pct: parseFloat(document.getElementById('regBreakage').value),
         quality_score: 92.0,
         reliability_score: 90.0,
-        agent_strategy: 'balanced'
+        agent_strategy: 'balanced',
+        strategy: 'balanced'
       };
 
+      submitBtn.disabled = true;
+      const prevBtnText = submitBtn.textContent;
+      submitBtn.textContent = 'Registering Company...';
+
       try {
-        const res = await fetch('/api/suppliers/register', {
+        let res = await fetch('/api/suppliers/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || 'Registration failed');
+        if (res.status === 404 || res.status === 405) {
+          res = await fetch('/api/suppliers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
         }
 
-        const supplier = await res.json();
-        sessionStorage.setItem('negotiagent_supplier_id', supplier.id);
-        sessionStorage.setItem('negotiagent_supplier_name', supplier.name);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.detail || data.message || `Registration failed (${res.status})`);
+        }
+
+        const sup = extractSupplierRecord(data, usernameVal, nameVal);
+        sessionStorage.setItem('negotiagent_supplier_id', sup.id);
+        sessionStorage.setItem('negotiagent_supplier_name', sup.name);
 
         alertBox.className = 'alert-box success';
-        alertBox.textContent = 'Account created successfully! Loading your dashboard...';
+        alertBox.textContent = `Account created for "${sup.name}" (ID: ${sup.id})! Loading your dashboard...`;
         alertBox.style.display = 'block';
 
         setTimeout(() => {
           window.location.href = '/supplier_dashboard.html';
-        }, 900);
+        }, 1000);
       } catch (err) {
         alertBox.className = 'alert-box error';
         alertBox.textContent = err.message;
         alertBox.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = prevBtnText;
       }
     });
   </script>

@@ -266,7 +266,7 @@
           <button id="btnOpenAddSupplierModal" class="btn-primary" data-i18n="btnAddSupplier">+ Add Supplier Agent</button>
         </div>
 
-        <div id="suppliersContainer" class="suppliers-grid">
+        <div id="suppliersContainer" class="suppliers-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-top:1rem;">
           <!-- Injected via JS -->
         </div>
       </section>
@@ -502,6 +502,47 @@
   <!-- Scripts -->
   <script src="/js/translations.js"></script>
   <script src="/js/app.js"></script>
+
+  <!-- Populate Simulated Suppliers Grid Safely -->
+  <script>
+    async function loadSimulatedSuppliersGrid() {
+      const container = document.getElementById('suppliersContainer');
+      if (!container) return;
+
+      try {
+        const res = await fetch('/api/suppliers');
+        if (!res.ok) return;
+        const list = await res.json();
+        if (!Array.isArray(list) || list.length === 0) return;
+
+        // Only render fallback cards if app.js hasn't already populated cards
+        if (container.children.length > 0) return;
+
+        container.innerHTML = list.map((s) => `
+          <article class="metric-card" style="text-align:left; border-left:4px solid #0f172a;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
+              <strong style="color:#0f172a; font-size:0.95rem;">${s.name}</strong>
+              <span class="badge-demo" style="font-size:0.72rem;">${s.id}</span>
+            </div>
+            <div style="font-size:0.8rem; color:#475569; margin-top:0.5rem; line-height:1.5;">
+              Hub: <strong>${s.location || 'Regional Hub'}</strong><br>
+              List Quote: <strong>₹${s.base_price_per_box}/box</strong> | Walkaway Floor: <strong>₹${s.min_walkaway_price}/box</strong><br>
+              Lead: <strong>${s.delivery_lead_days}d</strong> | Breakage: <strong>${s.breakage_pct}%</strong> | Quality: <strong>${s.quality_score}</strong>
+            </div>
+          </article>
+        `).join('');
+      } catch (err) {
+        console.error('Simulated suppliers fallback load error:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(loadSimulatedSuppliersGrid, 300);
+    });
+    document.getElementById('navLinkSuppliers')?.addEventListener('click', () => {
+      setTimeout(loadSimulatedSuppliersGrid, 150);
+    });
+  </script>
 
   <!-- Isolated Sign-Out Handler (Must remain below app.js) -->
   <script>
